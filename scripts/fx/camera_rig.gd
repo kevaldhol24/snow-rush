@@ -60,7 +60,7 @@ func follow(r: Rider, tr: Track, speed: float, boost: bool, dead: bool, delta: f
 func menu_orbit(r: Rider, delta: float, shop_open: bool) -> void:
 	menu_t += delta
 	var ang := sin(menu_t * 0.3) * 0.3 + 0.35
-	var dist := 4.2 if shop_open else 6.0
+	var dist := 6.2 if shop_open else 6.6
 	var h := 2.4 if shop_open else 2.0
 	var center := r.position
 	var fwd := -r.yaw_node.global_transform.basis.z
@@ -69,5 +69,6 @@ func menu_orbit(r: Rider, delta: float, shop_open: bool) -> void:
 	_pos = want if not _init_done else _pos.lerp(want, 1.0 - exp(-4.0 * delta))
 	_init_done = true
 	position = _pos
-	look_at(center + Vector3.UP * (-0.2 if shop_open else 0.55), Vector3.UP)
+	# aim above the (1.9 m) rider's centre so the whole body sits below the title
+	look_at(center + Vector3.UP * (-0.9 if shop_open else 1.75), Vector3.UP)
 	fov = lerp(fov, 55.0, 1.0 - exp(-3.0 * delta))

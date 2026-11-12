@@ -6,7 +6,8 @@
 - Prefer **glTF/GLB**. FBX is OK (Godot imports FBX via ufbx in 4.3).
 
 ## Important limitation of the cloud dev environment
-Claude's cloud sessions can download from **GitHub, npm and PyPI**, plus (since 2026-11-12, Keval opened access) **kenney.nl, quaternius.com and dl.google.com**. Still **blocked**: itch.io (so Quaternius packs, which download via itch), Google Drive, Poly Haven, ambientCG, Sketchfab, Mixamo, Pixabay, freesound.
+Claude's cloud sessions can download from **GitHub, npm and PyPI**, plus (since 2026-11-12, Keval opened access) **kenney.nl, quaternius.com and dl.google.com**. Also reachable since 2026-11-12: **itch.io + quaternius.itch.io** (+ itch's R2 download CDN), **polyhaven.com / dl.polyhaven.org** (files only; `api.polyhaven.com` is blocked, so fetch by known file URL), **ambientcg.com** pages (but its file host `acg-download.struffelproductions.com` is blocked). Still blocked: Google Drive, Sketchfab, Mixamo, Pixabay, freesound.
+→ itch free download: `tools/itch_dl.sh <user> <slug> <outdir> [filter]` (same requests as itch's own JS). Large raw packs (D-016): `bash tools/fetch_assets.sh` → `assets/raw_packs/` (git-ignored).
 → Kenney download from a session: GET the asset page with a browser User-Agent + cookie jar, read `data-download-id`, GET `https://kenney.nl/download-link/<id>` (JSON with a signed URL), then download that URL with the same cookies.
 → **Keval downloads the packs below on his PC and commits them to `assets/third_party/`** (or uploads the zips to a session). After that, Claude processes them (import, recolour, LOD, snow-cap shader, etc.).
 → Packs that already live on GitHub (KayKit, Kenney starter kits) can be pulled by Claude directly.
@@ -64,3 +65,7 @@ Claude's cloud sessions can download from **GitHub, npm and PyPI**, plus (since 
 | All trees/rocks/ramps/coins/terrain in v0.1 | procedural code | own | KDIT Labs | v0.1 visuals (partly replaced in v0.4.1) |
 | Kenney **Holiday Kit** (raw: `assets/third_party/kenney_holiday_kit/`) → `tree-snow-a/b/c`, `snowman`, `snowman-hat`, `rocks-large`, `rocks-medium`, `sled`, `lantern` + `Textures/colormap.png` in `assets/models/env/kenney/` | kenney.nl/assets/holiday-kit | CC0 | Kenney | Snowy pine obstacles + decor, snowmen, rock obstacles/boulders/decor (v0.4.1) |
 | Kenney **Nature Kit** 2.1 (raw: `assets/third_party/kenney_nature_kit/`) → `tree_pineTallA–D_detailed`, `tree_pineRoundA/C`, `rock_largeA–D`, `rock_tallA/B/E`, `log_large`, `stump_old`, `stump_round` in `assets/models/env/kenney/` | kenney.nl/assets/nature-kit | CC0 | Kenney | Tall pine decor (recoloured + shader snow cap), rock obstacles, logs (v0.4.1) |
+| Quaternius **Universal Base Characters** [Standard] → `Superhero_Male_FullBody` (+ textures downscaled to 1K, outfit painted: `T_Rider_Outfit.png`) in `assets/models/rider_q/` | quaternius.itch.io/universal-base-characters | CC0 | Quaternius | Rider body (v0.5.0) |
+| Quaternius **Universal Animation Library** 1 + 2 [Standard] → 13 clips extracted to `assets/models/rider_q/rider_anims.res` (raw GLBs in `assets/raw_packs/`, not in git) | quaternius.itch.io/universal-animation-library(-2) | CC0 | Quaternius | Rider animations (v0.5.0) |
+| Quaternius **Stylized Nature MegaKit** [Standard] (raw in `assets/raw_packs/`, not in git; not used yet) | quaternius.itch.io/stylized-nature-megakit | CC0 | Quaternius | Planned: dead trees, rocks |
+| Poly Haven **snow_02** normal map 1K → `assets/textures/snow/snow_02_nor_gl_1k.jpg` | polyhaven.com/a/snow_02 | CC0 | Poly Haven | Snow detail normals (v0.5.0) |
