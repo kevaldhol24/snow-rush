@@ -7,7 +7,8 @@ extends Node
 signal flick(dir: String) # "up", "down", "left", "right"
 
 const FLICK_WINDOW := 0.13 # seconds
-const FLICK_MIN_PX := 55.0
+const FLICK_MIN_PX := 70.0
+const FRESH_TOUCH := 0.3 # sideways flicks (spins) only from a new touch, never mid-steer
 const SENS_RANGE := [0.24, 0.17, 0.12] # fraction of screen width for full lock (low/med/high sensitivity)
 
 var steer := 0.0
@@ -16,6 +17,7 @@ var _idx := -1
 var _anchor := 0.0
 var _samples: Array = [] # [time, Vector2]
 var _flicked_at := -1.0
+var _down_at := 0.0
 var _key_steer := 0.0
 
 func _range_px() -> float:
@@ -37,6 +39,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.pressed and _idx == -1:
 			_idx = event.index
 			_anchor = event.position.x
+			_down_at = _now()
 			_samples = [[_now(), event.position]]
 		elif not event.pressed and event.index == _idx:
 			_idx = -1
@@ -62,10 +65,10 @@ func _check_flick(t: float) -> void:
 	if t - _flicked_at < 0.25 or _samples.size() < 2:
 		return
 	var d: Vector2 = _samples[-1][1] - _samples[0][1]
-	if abs(d.y) > FLICK_MIN_PX and abs(d.y) > abs(d.x) * 1.4:
+	if abs(d.y) > FLICK_MIN_PX and abs(d.y) > abs(d.x) * 1.8:
 		_flicked_at = t
 		flick.emit("down" if d.y > 0 else "up")
-	elif abs(d.x) > FLICK_MIN_PX * 1.3 and abs(d.x) > abs(d.y) * 1.4:
+	elif t - _down_at < FRESH_TOUCH and abs(d.x) > FLICK_MIN_PX * 1.3 and abs(d.x) > abs(d.y) * 1.4:
 		_flicked_at = t
 		flick.emit("right" if d.x > 0 else "left")
 

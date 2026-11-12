@@ -19,7 +19,7 @@ func follow(r: Rider, tr: Track, speed: float, boost: bool, dead: bool, delta: f
 	# desired camera: behind (uphill) and above the rider, looking at a point down the slope
 	# framing: rider at ~70% screen height, horizon high (~20%) -> you look DOWN the fall line
 	var back := 7.6
-	var cam_u := r.u * 0.75
+	var cam_u := r.u # full follow: at 0.75 the rider slid toward/off the narrow portrait edge
 	var behind_ground := tr.height(cam_u, r.a - back)
 	var rider_y := r.y
 	var cy: float = max(behind_ground, rider_y) + 3.7
@@ -29,7 +29,7 @@ func follow(r: Rider, tr: Track, speed: float, boost: bool, dead: bool, delta: f
 	var want_pos := tr.to_render(cam_u, r.a - back, cy)
 	# look point: well ahead, a fixed amount below the rider -> stable pitch, rider sits low on screen
 	var ahead_a := r.a + 18.0
-	var want_look := tr.to_render(r.u * 0.9, ahead_a, rider_y - 5.2)
+	var want_look := tr.to_render(r.u, ahead_a, rider_y - 5.2)
 	if not _init_done:
 		_pos = want_pos
 		_look = want_look

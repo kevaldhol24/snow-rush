@@ -179,10 +179,10 @@ func jump() -> void:
 		combo = 0
 		jumped.emit()
 		play_anim("Jump_Start", 1.6)
-	elif trick == "" and time_to_land() > 0.42:
+	elif trick == "" and time_to_land() > 0.34:
+		# >= 0.34 s: lands at worst "sketchy" (crash needs > 35% of the 0.52 s flip left).
+		# Shorter hops ignore the flick: a flip there was a guaranteed crash.
 		start_trick("flip")
-	elif trick == "":
-		start_trick("flip") # risky late flip: player's choice
 
 func spin(dir: int) -> void:
 	if crashed or grounded or trick != "":
@@ -332,10 +332,11 @@ func _land() -> String:
 func _update_visual(delta: float, speed: float) -> void:
 	position = track.to_render(u, a, y)
 	# face along the path + carve direction
-	var carve_yaw := atan2(-vu, max(speed, 1.0)) * 1.4
+	var carve_yaw := atan2(-vu, max(speed, 1.0)) * 1.7
 	_vis_yaw = lerp_angle(_vis_yaw, -track.heading(a) + carve_yaw, 1.0 - exp(-10.0 * delta))
 	yaw_node.rotation.y = _vis_yaw
-	var target_roll: float = clamp(-vu * 0.06, -0.55, 0.55) if grounded else 0.0
+	# small inclination only (was up to ~30 deg: read as a motorbike lean, not a snow turn)
+	var target_roll: float = clamp(-vu * 0.02, -0.18, 0.18) if grounded else 0.0
 	var target_pitch := 0.0
 	if grounded:
 		var g0 := track.height(u, a - 0.8)
