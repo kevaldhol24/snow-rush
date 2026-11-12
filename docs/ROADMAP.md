@@ -3,9 +3,9 @@
 > **How to use:** work top to bottom. Each phase ends with a debug APK on Keval's phone (Oppo Reno 16c) and his **go / no-go**. Tick boxes as you go and update **Current status**. Never start the next phase without his go.
 
 ## Current status
-- **Phase:** 1 ✅ done (merged to `main`). **Phase 2 (look-dev) in progress** on branch `phase-2-wip`: step 1 (snow shader, normals fix, carve trails) + step 2 (Kenney packs for trees/rocks/snowmen, top-speed fairness fixes) done.
-- **Last build:** `SnowRush-v0.4.1-phase2-debug.apk` (versionCode 7): Kenney packs. Previous: v0.4.0 (step 1), v0.3.1 (Phase 1 final).
-- **Waiting on Keval:** look feedback on v0.4.1; a **Quaternius rigged character + Universal Animation Library** zip (quaternius.com downloads go via itch.io, still blocked) and ideally ambientCG snow/rock textures (blocked). Kenney kits are in (downloaded from the session).
+- **Phase:** 1 ✅ done (merged to `main`). **Phase 2 (look-dev) in progress** on branch `phase-2-wip`: steps 1–3 done (snow shader + detail normals, normals fix, carve trails, Kenney props, top-speed fairness, **new rider ★ awaiting approval**).
+- **Last build:** `SnowRush-v0.5.0-phase2-debug.apk` (versionCode 8): new rider + snowboard + snow detail. Previous: v0.4.1 (Kenney props), v0.4.0, v0.3.1 (Phase 1 final).
+- **Waiting on Keval:** ★ verdict on the new rider look (v0.5.0); confirm D-016 (big raw packs out of git). All asset blockers cleared (itch/Quaternius, Poly Haven, Kenney reachable; GitHub linked).
 
 ---
 
@@ -40,7 +40,8 @@ Goal: store-screenshot quality (see `ART_DIRECTION.md`). Approval gates at each 
 - [x] Import pipeline for third-party packs (scale, origin, shared materials), `assets/third_party` excluded from export (`PackProps`, v0.4.1)
 - [ ] Tree LOD / impostors (only if on-device FPS needs it)
 - [x] `snow.gdshader`: wrap lighting, blue shadows, view-dependent glitter, slope tint, powder rim (v0.4.0)
-- [ ] Snow detail normal maps + rock blend on very steep faces (needs ambientCG textures)
+- [x] Snow detail normal maps (Poly Haven snow_02, v0.5.0)
+- [ ] Rock blend on very steep faces
 - [x] Fix: inverted normals on all procedural meshes (props were lit from behind since v0.1)
 - [x] **Board carve trails** (ribbon) (v0.4.0)
 - [ ] Landing decals
@@ -51,8 +52,10 @@ Goal: store-screenshot quality (see `ART_DIRECTION.md`). Approval gates at each 
 - [ ] Sky shader (gradient, sun, clouds), layered mountain silhouettes, height fog
 - [ ] Biome system + 2 biomes fully dressed (Pine Forest morning, Frozen Lakes golden hour) ★
 - [ ] Particles: powder spray (lit), landing burst, falling snow layers, speed lines, coin sparkle, tree puff, crash burst
-- [ ] Rider: new stylized snowboarder (pack body + winter gear), sideways stance, procedural poses/IK (carve lean, crouch, air, flip tuck, land absorb, crash tumble) ★
-- [ ] Snowboard model + top-sheet texture system; 4 designs + trails ★
+- [x] Rider: Quaternius body + painted winter outfit + beanie/goggles, sideways stance, riding crouch, toe/heel lean (v0.5.0) ★ awaiting approval
+- [ ] Rider poses: air/grab, flip tuck, land absorb, crash tumble; outfit seam cleanup
+- [x] Snowboard model (1.6 m, kicked tips, stripes in board colours) (v0.5.0)
+- [ ] Top-sheet texture system; 4 designs + trails ★
 - [ ] Camera polish: carve lean, air pull-back, cliff reveal, Perfect slow-mo
 - [ ] Menu scene: rider on a scenic ridge, slow orbit
 - [ ] Quality presets hold budget (`ART_DIRECTION.md §11`)

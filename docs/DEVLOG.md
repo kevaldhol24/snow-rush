@@ -15,6 +15,21 @@ One entry per task or session, **newest at the top**. Append; never rewrite hist
 
 ---
 
+## 2026-11-12: Phase 2 step 3: blockers cleared (Quaternius via itch, Poly Haven), new rider ★, snow detail
+**Phase:** 2 · **Commits:** `47157a9`, `7b4e9c9` + this docs/build commit · **Build:** `SnowRush-v0.5.0-phase2-debug.apk` (versionCode 8, 56.6 MB, sent in chat for the ★ rider look gate)
+**Context:** Keval linked GitHub and opened network access ("you have all the access now, work on blockers"). Pushed `main` (Phase 1, CI green), `phase-1-wip`, `phase-2-wip`. Access probe: `quaternius.itch.io` + itch's R2 CDN work after Keval added `*.itch.io`; `dl.polyhaven.org` works (but `api.polyhaven.com` is blocked); ambientCG pages work but its file host `acg-download.struffelproductions.com` is blocked (not needed now).
+**What:**
+- **itch free-download script** (`tools/itch_dl.sh`): the same requests as itch's own JS (POST `/download_url`, then POST `/file/<upload_id>?source=game_download&after_download_lightbox=1&as_props=1`; sending a `key` returned "invalid key"). Downloaded (all CC0): Universal Base Characters, Universal Animation Library 1 + 2, Stylized Nature MegaKit (Standard tiers).
+- **D-016:** big raw packs (~250 MB zipped) stay out of git → `assets/raw_packs/` (git-ignored, export-excluded), re-download with `bash tools/fetch_assets.sh`. Only processed, used files are committed.
+- **New rider (D-017, ★ gate):** Quaternius male base body (65-bone UE-style rig; textures downscaled 2K → 1K). The free body is a bare mannequin in shorts, so `tools/paint_outfit.py` labels each triangle by rest-pose body region and paints jacket (orange, teal shoulders), snow pants (navy, knee panels), gloves, boots into UV space (face kept). Beanie (yellow, pom-pom) + goggles on a BoneAttachment3D at the Head bone; rim light. 13 UAL clips extracted into `rider_anims.res` (281 KB instead of 15 MB of GLBs). `RiderPose` (SkeletonModifier3D, after the AnimationPlayer): body turned 90° on the board (regular stance), head/shoulders turned toward travel, arms out, stance widened 6°, riding crouch (pelvis drop 0.9·(1−cos a), thigh/calf/foot rotations keep the feet flat). The ride clip is `Idle` + crouch (`Crouch_Idle` is a kneeling sneak). Scale 1.05 (~1.9 m, so it reads on a phone). The existing lean node now gives toe/heel-side lean naturally.
+- **Snowboard mesh:** 1.6 × 0.32 m, rounded kicked tips, top-sheet stripes in the board colours, dark edges, explicit normals (the old 2 × 0.68 m slab's winding broke when `_finish()` started flipping normals).
+- **Snow detail normals:** Poly Haven `snow_02` normal (CC0), two scales, fading out by 45 m. Terrain chunks have no tangents → per-pixel cotangent frame from `dFdx/dFdy` (Compat-safe).
+- Menu/shop camera reframed for the taller rider (menu: whole body under the title; shop: rider + board above the panel).
+
+**Result:** autotest 10 seeds: ghost_fail 0, no script errors, same outcomes as before (deterministic). Headless sim covers ~30% fewer km in the same wall time (skinned rider + modifier): on-device FPS needs Keval's check (FPS meter in Settings). APK 56.6 MB (+6.4 MB). Screenshots: menu, shop, carving, air.
+**Known rough edges (rider):** a few skin patches at the collar/shoulder seams of the painted outfit; air and crash still use the riding pose (no grab/tuck/tumble yet); the old KayKit `rider.glb` is kept until Keval approves.
+**Next:** Keval's ★ verdict on the rider. Then: air/landing/crash poses (UAL NinjaJump/Death/Hit clips + RiderPose), outfit seam cleanup, particles, sky shader, board top-sheet designs, dead trees/rocks from the MegaKit.
+
 ## 2026-11-12: Phase 2 step 2: Kenney packs for trees/rocks/snowmen + fairness fixes at top speed
 **Phase:** 2 · **Commits:** `941fc5b`, `94eba3e` + this docs/build commit · **Build:** `SnowRush-v0.4.1-phase2-debug.apk` (versionCode 7, 50.2 MB, sent in chat)
 **Context:** Keval opened network access ("you should be able to download now"). Probed: **kenney.nl, quaternius.com, dl.google.com reachable**; itch.io, Google Drive, Poly Haven, ambientCG still blocked (proxy 403). Quaternius packs download via itch.io, so they're still unreachable (rider body + Stylized Nature MegaKit). GitHub push still blocked (account not linked to Claude).
