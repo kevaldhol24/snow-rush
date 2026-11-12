@@ -3,9 +3,10 @@
 > **How to use:** work top to bottom. Each phase ends with a debug APK on Keval's phone (Oppo Reno 16c) and his **go / no-go**. Tick boxes as you go and update **Current status**. Never start the next phase without his go.
 
 ## Current status
-- **Phase:** 1 **in progress** on branch `phase-1-wip` (not merged). See the top entry of `DEVLOG.md` for exactly where we stopped and the next steps.
-- **Last build:** v0.1 prototype (commit `6a25503`, lane-based). Keval's feedback: likes jumps/flips/360; start too slow; doesn't feel downhill; ramps look artificial; looks not impressive.
-- **Waiting on Keval:** download the asset packs listed in `ASSETS.md` → commit to `assets/third_party/` (needed by Phase 2; can happen in parallel with Phase 1).
+- **Phase:** 1 **built, waiting for Keval's go/no-go** on branch `phase-1-wip` (not merged to `main`). See the top entry of `DEVLOG.md`.
+- **Last build:** `SnowRush-v0.2.0-phase1-debug.apk` (versionCode 2, 2026-11-12, sent in chat). Autotest 10 seeds: ghost_fail 0, median bot distance ≈ 17.9 km.
+- **Previous build:** v0.1 prototype (commit `6a25503`, lane-based). Keval's feedback: likes jumps/flips/360; start too slow; doesn't feel downhill; ramps look artificial; looks not impressive.
+- **Waiting on Keval:** (1) playtest the Phase 1 APK on the Reno 16c → go/no-go; (2) download the asset packs listed in `ASSETS.md` → commit to `assets/third_party/` (needed by Phase 2).
 
 ---
 
@@ -16,20 +17,20 @@
 
 ## Phase 1: Core feel (go/no-go for the whole direction)
 Goal: it **feels** fast, downhill and free. Visuals can stay prototype-grade, but they must not be worse than v0.1.
-- [ ] Restructure folders per `TECH.md §3` (core/player/world/fx/ui/dev); keep the game running after each step
-- [ ] Slope space + world transform: tilted slope, floating origin, upright props, camera looking down the fall line
-- [ ] Free-steer rider: drag carve, flick jump/tricks, board yaw/lean, carve spray; keyboard controls
-- [ ] Speed curve 20 → 36 m/s, steepness effect, tuck
-- [ ] Terrain: rollers, steeps/flats, **cliff drops**, **rock/wind lips**, outcrops, crevasses, frozen river (procedural meshes for now)
-- [ ] Safe-line spline + section generator + Poisson scatter + validation bot
-- [ ] Analytic collision (cylinders/capsules/boxes, spatial hash), surface normal landing
-- [ ] Landing grades (Perfect/Good/Sketchy/Crash) on the existing flip/spin system
-- [ ] Coins on the safe line + trick arcs; magnet/boost/2× ported
-- [ ] Object pooling; no `queue_free` in play
-- [ ] Dev: perf HUD (FPS, draw calls), updated autopilot, `--section=` forcing, screenshot tooling
-- [ ] Settings: steering sensitivity (3 levels), quality Low/High (shadows on/off at least)
-- [ ] Autotest 10 seeds: no errors, median bot survival ≥ 1500 m
-- [ ] APK → Keval. **Acceptance:** feels downhill + fast from the start; carving is comfortable one-handed; cliffs/lips feel natural; ≥ 55 FPS on Reno.
+- [x] Restructure folders per `TECH.md §3` (core/player/world/fx/ui/dev); keep the game running after each step
+- [x] Slope space + world transform: tilted slope, floating origin, upright props, camera looking down the fall line
+- [x] Free-steer rider: drag carve, flick jump/tricks, board yaw/lean, carve spray; keyboard controls
+- [x] Speed curve 20 → 36 m/s, steepness effect, tuck
+- [x] Terrain: rollers, steeps/flats, **cliff drops**, **rock/wind lips**, outcrops, crevasses, frozen river (procedural meshes for now)
+- [x] Safe-line spline + section generator + Poisson scatter + validation bot
+- [x] Analytic collision (cylinders/capsules/boxes, spatial hash), surface normal landing
+- [x] Landing grades (Perfect/Good/Sketchy/Crash) on the existing flip/spin system
+- [x] Coins on the safe line + trick arcs; magnet/boost/2× ported
+- [ ] Object pooling; no `queue_free` in play (props/coins pooled ✔; feature visuals — cliff bands, lip rocks, river planes — still new/free per feature)
+- [x] Dev: perf HUD (FPS, draw calls), updated autopilot, `--section=` forcing, screenshot tooling
+- [x] Settings: steering sensitivity (3 levels), quality Low/High (shadows on/off at least)
+- [x] Autotest 10 seeds: no errors, median bot survival ≥ 1500 m (2026-11-12: ghost_fail 0, median ≈ 17.9 km)
+- [ ] APK → Keval (v0.2.0-phase1 sent 2026-11-12, awaiting go/no-go). **Acceptance:** feels downhill + fast from the start; carving is comfortable one-handed; cliffs/lips feel natural; ≥ 55 FPS on Reno.
 
 ## Phase 2: Look-dev and visual overhaul
 Goal: store-screenshot quality (see `ART_DIRECTION.md`). Approval gates at each ★.

@@ -15,6 +15,38 @@ One entry per task or session, **newest at the top**. Append; never rewrite hist
 
 ---
 
+## 2026-11-12: Phase 1: downhill look, camera, cliff edge, 10-seed autotest, first Phase 1 APK
+**Phase:** 1 (awaiting Keval's go/no-go) · **Commits:** `f466684`, `eb16e86`, `574159a` + this docs/build commit · **Build:** `SnowRush-v0.2.0-phase1-debug.apk` (versionCode 2, sent in chat; installs over v0.1)
+**What:**
+- **Camera framing** (`camera_rig.gd`): back 6.0 → 7.6 m, height +2.3 → +3.7 m. Rider now sits at ~68–70% screen height; horizon at ~15–20%; pitch down the fall line ~23°.
+- **Downhill read** (`Meshes.mountains()` → camera-relative backdrop): a hazy forested valley floor 150 m *below* the camera (250–880 m out) with two broad mountain ranges rising out of it to about eye level. Replaces the 650 m ring of tall spikes whose bases hid behind the slope edge.
+- Sky "ground" colour = valley haze (anything below the horizon is never snow-white); fog colour bluer `(0.72, 0.80, 0.93)`.
+- Terrain shader: faint streaks along the fall line (UV = lateral m / along-path m) as a perspective cue for slope direction and pitch.
+- **Cliff edge** (`Meshes.cliff_band`): jagged lip where ~45% of columns break through as rock, standing 0.35–0.8 m proud; rock crags (`_crag`) rise above the edge on both sides, **outside** the rideable width (centres ≥ `EDGE + 3.2` m). Visual only, no collision change.
+- Version bumped to `0.2.0-phase1` / code 2.
+
+**Why:** DEVLOG NEXT items 1–5. Keval: "doesn't feel like downhill" (D-004). Diagnosis from the baseline stills: the far terrain faded into a whitish fog, and the sky's below-horizon colour was the same white, so the snow seemed to run on to the horizon. The mountain bases sat behind the slope edge, so the peaks looked like they rose from snow at the rider's own level. Nothing in view was clearly *below* you. The cliff from the chase cam was a flat blue stripe (the rock face points downhill, away from the camera).
+
+**How:**
+- Geometry reasoning: the slope's far edge sits ~19–20° below horizontal. The valley floor and mountain bases only show if they're at a *smaller* depression angle (otherwise the near slope covers them). Hence valley Y −150 at 700–880 m (≈10–12°) and peaks at about eye level, so they fit in the band between the horizon and the slope edge.
+- Portrait FOV is narrow (±5 m of slope at 13 m distance), so the side crags only show on the approach, 30–60 m out. Checked with `--section=cruise,cliff` shots at t = 12–16.5 s.
+- **Toolchain gotcha:** `dl.google.com` is now **blocked** in cloud sessions, so TECH.md §4's Android SDK step fails. Workaround (now in TECH.md §4): build `apksigner` from the AOSP apksig source mirror on GitHub (`LineageOS/android_tools_apksig`) with the local JDK 21 (stub out the one conscrypt line) and install it as `sdk/build-tools/34.0.0/apksigner`, plus a stub `sdk/platform-tools/adb`. Godot's non-gradle export only needs those; the APK verifies with v1+v2+v3 signatures.
+- The `gh` API isn't linked in this session (code search fails), but plain `git clone` of public repos works.
+
+**Result:**
+- Screenshots (sent in chat): before/after on seed 12, forest/valley, cliff approach + edge, crevasse, frozen river, lips. Rider ~70% height ✔. The downhill read is clearly better in stills, but final judgement needs the phone at speed.
+- Cliff/crevasse/river visuals checked with `--section` shots: cliff OK after the fix; crevasse = dark hole with jagged walls (prototype-grade, OK); river = cracked-ice band + jump (OK).
+- **Autotest, 10 seeds** (`--autotest --quit_on_death --seed=1..10`, 240 s cap): all 10 died eventually, **ghost_fail = 0 on all**, no script errors. Distances (m): 6674, 9700, 10683, 12610, 17715, 18135, 25087, 25949, 27944, 31044 → **median ≈ 17.9 km** (target ≥ 1.5 km). Deaths: pine ×6, bad_landing ×2, log, boulder, all at 6+ km and top speed.
+- Only log noise: the known headless `Parameter "m" is null` and exit leaks; one `Tweener` "target freed" warning.
+- Pool high-water mark rises slowly with difficulty (seed 4: 146 at 2 min → 236 at 14 min, levelling off). Peak per-type demand, not a leak.
+
+**Known gaps (not done, left unticked in ROADMAP):**
+- Feature visuals (cliff bands, lip rocks, river planes) are still `new` + `queue_free` per feature (a few per section), so "no queue_free in play" isn't strictly true yet.
+- On-device FPS not measured (needs Keval's phone; FPS + draw calls in Settings → FPS meter).
+- From the last entry: `tuck` HUD feedback polish, revive edge-case check.
+
+**Next:** Keval tests the APK on the Reno 16c → go/no-go on Phase 1 acceptance (downhill + fast from the start, one-handed carving, cliffs/lips feel natural, ≥ 55 FPS). On go: merge `phase-1-wip` → `main`. On no-go: fix per feedback. Nothing is merged until he approves.
+
 ## 2026-11-12: Phase 1 WIP: free steer + real downhill (branch `phase-1-wip`, NOT merged)
 **Phase:** 1 (in progress) · **Commits:** see branch `phase-1-wip` · **Build:** none yet (no APK sent)
 **What (done, runs headless + renders):**
