@@ -232,12 +232,17 @@ func _make_section() -> void:
 			_scatter(a, a + len, 0.04, {"pine": 0.8, "rock": 0.2})
 			_coins(a + 10, a + len - 10, 2)
 		"river":
-			len = 90.0
+			# Run-in >= a top-speed jump: at 54 m/s a previous river/lip jump flew 86 m and landed ON this
+			# lip's crest falling at 41 m/s -> no launch -> into the water (seed 10, a=9501).
+			var run_in: float = max(35.0, speed_hint * 1.7)
+			len = run_in + 55.0
 			_extend_safe(a + len, 2.0, 0.3)
-			var lip_top := a + 35.0
-			_lip(lip_top, 0.0, 30.0, 1.5, false)
+			var lip_top := a + run_in
+			# D-015 speeds: the slope falls away at ~17 m/s under you, so a fixed 1.5 m lip left the ghost
+			# 0.4 m short of the far bank (seed 4, a=15839). Lip grows a little with speed.
+			_lip(lip_top, 0.0, 30.0, 1.5 + max(0.0, speed_hint - 28.0) * 0.035, false)
 			var width := rng.randf_range(5.5, 8.5)
-			var r0 := lip_top + 5.0
+			var r0 := lip_top + 3.5
 			var f2 := {"kind": "river", "a0": r0, "a1": r0 + width, "depth": 1.8}
 			track.add_feature(f2)
 			world.on_feature(f2)

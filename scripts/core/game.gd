@@ -97,6 +97,8 @@ func _ready() -> void:
 		if a.begins_with("--ride_anim="):
 			rider.ride_anim = a.substr(12)
 	go_menu()
+	if "--autotest" in args and _debug_seed != 0:
+		seed(_debug_seed) # bot trick choices use randf(): seed them so autotest runs are reproducible
 	if "--autotest" in args:
 		auto_test = true
 		autopilot = Autopilot.new()

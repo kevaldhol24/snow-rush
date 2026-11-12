@@ -17,7 +17,12 @@ func drive(g, delta: float) -> void:
 		if o.a > r.a + g.speed * 0.6:
 			break
 		if abs(o.u - r.u) < o.r + 0.8 and o.h > 1.5:
-			target = o.u + (o.r + 1.4) * (1.0 if r.u >= o.u else -1.0)
+			# dodge toward the safe line (it's guaranteed clear), not just "whichever side I'm on"
+			var safe: float = w.gen.safe_u(o.a)
+			var side := 1.0 if r.u >= o.u else -1.0
+			if abs(safe - o.u) > 0.5:
+				side = sign(safe - o.u)
+			target = o.u + (o.r + 1.4) * side
 	# --weave: carve S-turns across the run (for screenshots of the carve look)
 	if "--weave" in OS.get_cmdline_user_args():
 		target = sin(g.run_time * 0.55) * (Track.HALF_W - 3.0)
