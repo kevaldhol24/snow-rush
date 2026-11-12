@@ -17,13 +17,14 @@ func snap() -> void:
 
 func follow(r: Rider, tr: Track, speed: float, boost: bool, dead: bool, delta: float) -> void:
 	# desired camera: behind (uphill) and above the rider, looking at a point down the slope
-	var back := 6.0
+	# framing: rider at ~70% screen height, horizon high (~20%) -> you look DOWN the fall line
+	var back := 7.6
 	var cam_u := r.u * 0.75
 	var behind_ground := tr.height(cam_u, r.a - back)
 	var rider_y := r.y
-	var cy: float = max(behind_ground, rider_y) + 2.3
+	var cy: float = max(behind_ground, rider_y) + 3.7
 	if dead:
-		back = 9.0
+		back = 10.5
 		cy += 2.5
 	var want_pos := tr.to_render(cam_u, r.a - back, cy)
 	# look point: well ahead, a fixed amount below the rider -> stable pitch, rider sits low on screen
