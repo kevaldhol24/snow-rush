@@ -5,7 +5,8 @@ Snow Rush is a mobile (Android) endless downhill **free-carve snowboarding** gam
 ## Read before doing anything
 1. `docs/ROADMAP.md`: **Current status** + which phase/tasks are next. Update it as you work.
 2. `docs/DECISIONS.md`: what's decided and why. Don't silently reverse decisions; add a new entry instead.
-3. `docs/GDD.md` (game design), `docs/ART_DIRECTION.md` (visual target), `docs/TECH.md` (architecture, **cloud setup commands**, testing), `docs/ASSETS.md` (sources, licences, register).
+3. `docs/DEVLOG.md`: what was done in past sessions, how and why (newest first).
+4. `docs/GDD.md` (game design), `docs/ART_DIRECTION.md` (visual target), `docs/TECH.md` (architecture, **cloud setup commands**, testing), `docs/ASSETS.md` (sources, licences, register).
 
 ## How we work with Keval
 - Keval playtests on his phone (Oppo Reno 16c) and gives feedback. Claude does design, code, art pipeline and testing.
@@ -14,6 +15,7 @@ Snow Rush is a mobile (Android) endless downhill **free-carve snowboarding** gam
 - Visual quality matters as much as gameplay (D-010).
 
 ## Ground rules
+- **Log every task/session in `docs/DEVLOG.md`** (newest on top, use the template there): what, why, how, result/feedback, next. Add the entry in the same commit as the work (or right after), and include Keval's feedback when he gives it.
 - Keep the game runnable after every commit. Commit in small, descriptive steps. Push to `main` (CI builds the APK).
 - Every third-party asset → `docs/ASSETS.md` register (licence!). Raw packs in `assets/third_party/` (not exported).
 - Cloud sessions can only download from GitHub/npm/PyPI. Ask Keval to upload/commit anything else.

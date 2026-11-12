@@ -14,6 +14,7 @@ Endless downhill **free-carve snowboarding** game for Android, built in **Godot 
 | [docs/ASSETS.md](docs/ASSETS.md) | Free asset shortlist, pipeline, licence register |
 | [docs/TECH.md](docs/TECH.md) | Architecture, cloud setup, test commands |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Decision log |
+| [docs/DEVLOG.md](docs/DEVLOG.md) | Per-session log: what, how, why |
 
 ---
 
