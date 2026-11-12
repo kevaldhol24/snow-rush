@@ -14,6 +14,7 @@ const START_A := 8.0
 var state := State.MENU
 var world: World
 var rider: Rider
+var trail: CarveTrail
 var cam: CameraRig
 var ui: UI
 var input: TouchInput
@@ -55,6 +56,8 @@ func _ready() -> void:
 	add_child(world)
 	rider = Rider.new()
 	world.root.add_child(rider)
+	trail = CarveTrail.new()
+	world.root.add_child(trail)
 	cam = CameraRig.new()
 	cam.fov = 64
 	cam.far = 900
@@ -224,6 +227,7 @@ func _new_world() -> void:
 	world.forced_sections = _forced
 	world.reset(_seed)
 	rider.reset(world.track, START_A)
+	trail.reset(world.track)
 	cam.snap()
 
 func go_menu() -> void:
@@ -316,6 +320,7 @@ func revive() -> void:
 			o.dead = true
 			o.node.visible = false
 	rider.revive(a, u)
+	trail.reset(world.track)
 	grace_t = 2.5
 	state = State.PLAY
 	input.enabled = true
@@ -421,6 +426,7 @@ func _play_step(delta: float) -> void:
 	rider.steer_step(delta)
 	var res := rider.step(delta, eff * cos(rider.heading) * delta, eff)
 	_update_world(eff)
+	trail.feed(rider, eff)
 	match res:
 		"fell":
 			_die("crevasse" if not tr.feature_at(rider.a, "crevasse").is_empty() else "water")
