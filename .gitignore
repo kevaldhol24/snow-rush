@@ -3,3 +3,6 @@ build/
 export_credentials.cfg
 *.keystore
 !ci/debug.keystore
+
+# Large raw third-party packs (re-download with tools/fetch_assets.sh; see docs/ASSETS.md)
+assets/raw_packs/

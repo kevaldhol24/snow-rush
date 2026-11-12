@@ -71,16 +71,8 @@ func _ready() -> void:
 	var inner := Node3D.new()
 	inner.position.y = -0.9
 	pivot.add_child(inner)
-	model = preload("res://assets/models/rider.glb").instantiate()
-	model.rotation.y = PI
-	model.scale = Vector3.ONE * 0.78
-	model.position.y = 0.12
+	model = _build_body()
 	inner.add_child(model)
-	for nm in ["Knife_Offhand", "1H_Crossbow", "2H_Crossbow", "Knife", "Throwable"]:
-		var n := model.find_child(nm, true, false)
-		if n:
-			n.visible = false
-	anim = model.find_child("AnimationPlayer", true, false)
 	board_mi = MeshInstance3D.new()
 	board_mi.position.y = 0.05
 	inner.add_child(board_mi)
@@ -150,10 +142,127 @@ func set_board(b: Dictionary) -> void:
 	handling = b.handling
 
 func play_anim(n: String, speed := 1.0, blend := 0.15) -> void:
-	if anim == null or _cur_anim == n or not anim.has_animation(n):
+	var real: String = ANIM_MAP.get(n, n)
+	if anim == null or _cur_anim == n or not anim.has_animation(real):
 		return
 	_cur_anim = n
-	anim.play(n, blend, speed)
+	anim.play(real, blend, speed)
+
+# ------------------------------------------------------------------ body (Phase 2 rider, ★ gate)
+## Game-side animation names -> Universal Animation Library clips (Quaternius, CC0).
+## Clips live in rider_anims.res (extracted by scenes/dev/extract_rider_anims.tscn).
+const ANIM_MAP := {
+	"Idle": "ual1_Idle",
+	"Jump_Idle": "ual1_Idle", # riding stance = Idle + RiderPose crouch (Crouch_Idle is a kneeling sneak)
+	"Jump_Start": "ual2_NinjaJump_Start",
+	"Air": "ual2_NinjaJump_Idle",
+	"Jump_Land": "ual2_NinjaJump_Land",
+	"Death_A": "ual1_Death01",
+}
+const LOOPING := ["ual1_Idle", "ual2_NinjaJump_Idle"]
+const BODY_SCALE := 1.05 # 1.82 m model -> ~1.9 m: slightly heroic so the rider reads on a phone
+const STANCE_YAW := -PI * 0.5 # regular stance: body sideways on the board, left foot forward
+static var _libs := {}
+
+var pose: RiderPose
+
+func _build_body() -> Node3D:
+	var body: Node3D = preload("res://assets/models/rider_q/Superhero_Male_FullBody.gltf").instantiate()
+	body.rotation.y = PI + STANCE_YAW
+	body.scale = Vector3.ONE * BODY_SCALE
+	body.position.y = 0.07 # board thickness + bindings
+	var sk: Skeleton3D = body.find_children("*", "Skeleton3D", true, false)[0]
+	# winter outfit painted onto the base body's texture (tools/paint_outfit.py), plus rim light so the
+	# rider always reads against bright snow (ART_DIRECTION §3)
+	for mi in sk.find_children("*", "MeshInstance3D", false, false):
+		for si in mi.mesh.get_surface_count():
+			var m: Material = mi.mesh.surface_get_material(si)
+			if m is StandardMaterial3D:
+				var d: StandardMaterial3D = m.duplicate()
+				if mi.name == "SuperHero_Male":
+					d.albedo_texture = preload("res://assets/models/rider_q/T_Rider_Outfit.png")
+				d.rim_enabled = true
+				d.rim = 0.35
+				d.rim_tint = 0.4
+				mi.set_surface_override_material(si, d)
+	# animations: both libraries share this exact skeleton (65 bones, same names and node path)
+	var ap := AnimationPlayer.new()
+	ap.name = "AnimationPlayer"
+	body.add_child(ap)
+	ap.add_animation_library("", _library())
+	anim = ap
+	# snowboard stance overrides (after animation)
+	pose = RiderPose.new()
+	sk.add_child(pose)
+	_add_gear(sk)
+	return body
+
+static func _library() -> AnimationLibrary:
+	if _libs.has("main"):
+		return _libs["main"]
+	var lib: AnimationLibrary = preload("res://assets/models/rider_q/rider_anims.res")
+	for nm in LOOPING:
+		if lib.has_animation(nm):
+			lib.get_animation(nm).loop_mode = Animation.LOOP_LINEAR
+	_libs["main"] = lib
+	return lib
+
+## Beanie + goggles on the head bone. Positions are in skeleton space at rest (face = +Z, eyes y 1.70).
+func _add_gear(sk: Skeleton3D) -> void:
+	var head := sk.find_bone("Head")
+	var att := BoneAttachment3D.new()
+	att.bone_name = "Head"
+	sk.add_child(att)
+	var to_head := sk.get_bone_global_rest(head).affine_inverse()
+	var beanie_c := Color(0.95, 0.80, 0.18)
+	var parts := [
+		# [mesh, skeleton-space position, scale, colour]
+		[_hemi(0.104), Vector3(0, 1.722, -0.018), Vector3(1.07, 1.12, 1.12), beanie_c],
+		[_cyl(0.110, 0.042), Vector3(0, 1.738, -0.016), Vector3(1.0, 1.0, 1.06), beanie_c.darkened(0.15)],
+		[_ball(0.034), Vector3(0, 1.855, -0.03), Vector3.ONE, Color(0.97, 0.97, 1.0)],
+		[_cyl(0.108, 0.034), Vector3(0, 1.70, -0.014), Vector3(1.0, 1.0, 1.05), Color(0.12, 0.12, 0.15)],
+		[_box(Vector3(0.150, 0.056, 0.03)), Vector3(0, 1.702, 0.083), Vector3.ONE, Color(0.25, 0.75, 0.95)],
+	]
+	for p in parts:
+		var mi := MeshInstance3D.new()
+		mi.mesh = p[0]
+		var m := StandardMaterial3D.new()
+		m.albedo_color = p[3]
+		m.roughness = 0.6
+		if p[3] == Color(0.25, 0.75, 0.95): # goggle lens: glossy, slight glow so it reads from behind
+			m.metallic = 0.6
+			m.roughness = 0.15
+			m.emission_enabled = true
+			m.emission = p[3]
+			m.emission_energy_multiplier = 0.35
+		mi.material_override = m
+		mi.transform = to_head * Transform3D(Basis.from_scale(p[2]), p[1])
+		att.add_child(mi)
+
+static func _hemi(r: float) -> Mesh:
+	var m := SphereMesh.new()
+	m.radius = r
+	m.height = r
+	m.is_hemisphere = true
+	return m
+
+static func _cyl(r: float, h: float) -> Mesh:
+	var m := CylinderMesh.new()
+	m.top_radius = r
+	m.bottom_radius = r
+	m.height = h
+	return m
+
+static func _ball(r: float) -> Mesh:
+	var m := SphereMesh.new()
+	m.radius = r
+	m.height = r * 2.0
+	return m
+
+static func _box(sz: Vector3) -> Mesh:
+	var m := BoxMesh.new()
+	m.size = sz
+	return m
 
 func reset(t: Track, start_a: float) -> void:
 	track = t

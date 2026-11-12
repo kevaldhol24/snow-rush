@@ -462,46 +462,64 @@ static func pole(col: Color) -> ArrayMesh:
 	return m
 
 ## Snowboard for the rider (local: long axis Z). Uses StandardMaterial (player is not curved).
+## Snowboard (Phase 2): 1.6 m x 0.32 m (a bit oversized so it reads on a phone), rounded nose/tail
+## kicking up, top sheet in the board colours with an accent stripe, dark edges. Lies along Z.
+## Explicit normals + no culling (the old mesh's winding broke when _finish() flipped normals).
 static func board(b: Dictionary) -> ArrayMesh:
-	var st := _begin()
 	var col: Color = b.color
 	var acc: Color = b.accent
-	var hl := 1.0
-	var hw := 0.34
-	var th := 0.05
-	var pts := []
-	var n := 16
+	var hl := 0.80 # half length
+	var hw := 0.16 # half width
+	var core := 0.56 # straight section half-length; tips beyond
+	var th := 0.035
+	var n := 28
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rows := [] # [z, half width, y]
+	for i in n + 1:
+		var z: float = lerp(-hl, hl, float(i) / n)
+		var over: float = max(0.0, abs(z) - core)
+		var t: float = over / (hl - core)
+		var w: float = hw * sqrt(max(0.0, 1.0 - t * t * t)) # round tips
+		w = max(w, 0.02)
+		var y: float = over * over * 1.6 # kick
+		rows.append([z, w, y])
 	for i in n:
-		var a := TAU * i / n
-		var x := cos(a) * hw
-		var z := sin(a) * hl
-		# squarer outline
-		x = sign(x) * pow(abs(cos(a)), 0.55) * hw
-		z = sign(z) * pow(abs(sin(a)), 0.55) * hl
-		pts.append(Vector3(x, 0, z))
-	var top := Vector3(0, th, 0)
-	for i in n:
-		var j := (i + 1) % n
-		var p0: Vector3 = pts[i]
-		var p1: Vector3 = pts[j]
-		var stripe: bool = abs((p0.z + p1.z) * 0.5) < 0.18
-		# nose/tail kick up
-		var k0 := Vector3(0, max(0.0, abs(p0.z) - 0.6) * 0.5, 0)
-		var k1 := Vector3(0, max(0.0, abs(p1.z) - 0.6) * 0.5, 0)
-		_tri(st, top + Vector3(0, 0, 0), p1 + top + k1, p0 + top + k0, acc if stripe else col)
-		_tri(st, Vector3.ZERO, p0 + k0, p1 + k1, col.darkened(0.4))
-		_quad(st, p0 + k0, p0 + top + k0, p1 + top + k1, p1 + k1, acc.darkened(0.2))
-	var m := _finish(st)
+		var r0: Array = rows[i]
+		var r1: Array = rows[i + 1]
+		var zc: float = (r0[0] + r1[0]) * 0.5
+		var stripe: bool = abs(zc) < 0.06 or abs(abs(zc) - 0.40) < 0.035
+		var c_top: Color = acc if stripe else col
+		var a := Vector3(-r0[1], r0[2] + th, r0[0])
+		var bq := Vector3(r0[1], r0[2] + th, r0[0])
+		var c := Vector3(r1[1], r1[2] + th, r1[0])
+		var d := Vector3(-r1[1], r1[2] + th, r1[0])
+		var down := Vector3(0, -th, 0)
+		_nquad(st, a, bq, c, d, Vector3.UP, c_top)                       # top sheet
+		_nquad(st, a + down, d + down, c + down, bq + down, Vector3.DOWN, col.darkened(0.55)) # base
+		_nquad(st, bq, bq + down, c + down, c, Vector3.RIGHT, Color(0.12, 0.12, 0.14))       # edges
+		_nquad(st, a, d, d + down, a + down, Vector3.LEFT, Color(0.12, 0.12, 0.14))
+	var m := st.commit()
 	var mt := StandardMaterial3D.new()
 	mt.vertex_color_use_as_albedo = true
-	mt.roughness = 0.4
-	mt.metallic = 0.2 if b.id != "gold" else 0.8
+	mt.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mt.roughness = 0.35
+	mt.metallic = 0.15 if b.id != "gold" else 0.8
+	mt.rim_enabled = true
+	mt.rim = 0.3
 	if b.glow > 0.0:
 		mt.emission_enabled = true
 		mt.emission = col
-		mt.emission_energy_multiplier = b.glow
+		mt.emission_energy_multiplier = b.glow * 0.6
 	m.surface_set_material(0, mt)
 	return m
+
+static func _nquad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, n: Vector3, col: Color) -> void:
+	for v in [a, b, c, a, c, d]:
+		st.set_color(col)
+		st.set_normal(n)
+		st.add_vertex(v)
+
 
 ## Distant mountain range ring (not curved, follows camera).
 ## Camera-relative backdrop (Y is relative to the camera). Sells "downhill": a hazy valley floor far
