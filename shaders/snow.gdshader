@@ -19,6 +19,9 @@ uniform float glitter = 1.6;
 uniform float glitter_density = 0.997; // higher = fewer sparkles
 uniform float rim = 0.22;
 uniform float slope_tint = 0.35;
+// Poly Haven snow_02 normal map (CC0), two scales; fades out with distance (no far shimmer)
+uniform sampler2D detail_normal : hint_normal, filter_linear_mipmap, repeat_enable;
+uniform float detail_strength = 0.55;
 
 varying vec3 v_world;
 varying vec3 v_wn;
@@ -59,6 +62,26 @@ void fragment() {
 	col = mix(col, snow_shade * 0.95, smoothstep(0.25, 0.7, steep) * slope_tint);
 	ALBEDO = col;
 	ROUGHNESS = 0.85;
+	// detail normal: terrain chunks have no tangents, so build the tangent frame per pixel from
+	// screen-space derivatives (cotangent frame, view space), then perturb NORMAL directly
+	float dview = length(VERTEX);
+	float dfade = detail_strength * (1.0 - smoothstep(12.0, 45.0, dview));
+	if (dfade > 0.001) {
+		vec3 t1 = texture(detail_normal, UV * 0.45).rgb * 2.0 - 1.0;
+		vec3 t2 = texture(detail_normal, UV * 0.11 + vec2(0.37, 0.61)).rgb * 2.0 - 1.0;
+		vec3 tn = normalize(vec3(t1.xy + t2.xy * 0.8, t1.z));
+		vec3 dp1 = dFdx(VERTEX);
+		vec3 dp2 = dFdy(VERTEX);
+		vec2 duv1 = dFdx(UV);
+		vec2 duv2 = dFdy(UV);
+		vec3 dp2p = cross(dp2, NORMAL);
+		vec3 dp1p = cross(NORMAL, dp1);
+		vec3 T = dp2p * duv1.x + dp1p * duv2.x;
+		vec3 B = dp2p * duv1.y + dp1p * duv2.y;
+		float im = inversesqrt(max(max(dot(T, T), dot(B, B)), 1e-12));
+		vec3 pn = normalize(mat3(T * im, B * im, NORMAL) * tn);
+		NORMAL = normalize(mix(NORMAL, pn, dfade));
+	}
 	// powder rim: grazing angles glow toward the sky/haze colour
 	float fr = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 4.0);
 	float dist = length(VERTEX);

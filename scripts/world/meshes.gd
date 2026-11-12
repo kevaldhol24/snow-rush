@@ -26,6 +26,7 @@ static func mat(key: String = "vc") -> ShaderMaterial:
 			pass # procedural props paint their own snow; snow_cap (world.gdshader) is for imported packs
 		"snow":
 			m.shader = snow_shader # Phase 2 snow material (shaders/snow.gdshader)
+			m.set_shader_parameter("detail_normal", preload("res://assets/textures/snow/snow_02_nor_gl_1k.jpg"))
 		"coin":
 			m.set_shader_parameter("emission", Color(1.0, 0.75, 0.15))
 			m.set_shader_parameter("emission_energy", 0.3) # coins face the camera = backlit by the sun ahead
@@ -519,7 +520,6 @@ static func _nquad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vecto
 		st.set_color(col)
 		st.set_normal(n)
 		st.add_vertex(v)
-
 
 ## Distant mountain range ring (not curved, follows camera).
 ## Camera-relative backdrop (Y is relative to the camera). Sells "downhill": a hazy valley floor far
