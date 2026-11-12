@@ -15,6 +15,25 @@ One entry per task or session, **newest at the top**. Append; never rewrite hist
 
 ---
 
+## 2026-11-12: Carve steering (D-014), always downhill + faster (D-015)
+**Phase:** 1 (awaiting go/no-go) · **Commits:** `580643c` + this docs/build commit · **Build:** `SnowRush-v0.3.0-phase1-debug.apk` (versionCode 4, sent in chat)
+**Feedback (Keval, on v0.2.1):** "the steering is still not satisfying, not matching with how real skiing works." He shared a YouTube reference (`youtu.be/sPD1V024ziM`), but YouTube is not reachable from the cloud session, so I asked him for the file or the game name. Discussed options; he chose heading-based carving: "okay lets do that". Also: "make the way downhill only … long way for flat surface, I want to remove that, it should be like constant downhill", "increase initial speed and move the upper limit far more".
+**What:**
+- **Rider (`rider.gd`):** new `heading` (board/travel direction vs the fall line, max ±62°) and `steer_step()`. Drag = target heading; the board chases it (`TURN_K` 6.5, max `TURN_RATE` 2.4 rad/s, 25% in the air). Release → back to the fall line. Travel: `du = v·sin(h)`, `da = v·cos(h)` (Game splits it). At the run edge the bank turns the board back in. Lean = `atan(v·ω/g)·0.45`, clamped ±18° (from the turn, not the sideways speed). Visual yaw = true heading. Spray scales with carve intensity.
+- **Speed (`game.gd`):** speed is now a state. Target = curve `26 + 8(1−e^{−t/10}) + 0.07t`, capped at 50 m/s (≈ 4 min), × slope/tuck/landing mods × `(1 − 0.45·(1−cos h))`. It approaches the target at +6 m/s² and bleeds at −10 m/s². So cutting across the slope costs speed, and pointing down earns it back.
+- **Camera:** swings 40% behind the heading (position + look point); roll from yaw rate; the FOV ramp now spans 26–50 m/s.
+- **Run width:** `HALF_W` 12 → 18, `EDGE` 13.5 → 19.5; scatter count × `HALF_W/12` keeps obstacle density per m².
+- **Downhill only:** "flat" (12°) removed from the section weights (forced `--section=flat` now 18°); power-ups moved to cruise (50%). Min slope ~18°.
+- **Bot:** aims the board at the safe-line point `0.55·v` ahead; `--weave` makes it carve S-turns (screenshots).
+
+**Why:** D-014, D-015 (see DECISIONS).
+**Result:**
+- Autotest 10 seeds: **ghost_fail 0**, no script errors, no bad_landing. Deaths (m): 6463, 7654, 9496, 17133, 17590; 5 alive at the 240 s cap (44–45 km, 50 m/s).
+- `--weave` screenshots: body turned to the travel direction, lean into the turn, camera swung behind the board, 95–103 km/h at the start.
+
+**Watch on device:** turn rate (2.4 rad/s ≈ 12 m radius at 30 m/s: maybe too tight or too loose); speed bleed when carving (`SCRUB`, the 0.45 factor); finger travel for full lock (sensitivity setting); readability at 180 km/h (obstacle reaction time; may need lower density at top speed).
+**Next:** Keval tests v0.3.0 → tune turn rate / bleed / sensitivity from his notes → go/no-go.
+
 ## 2026-11-12: Phase 1 feedback round 1: bumps, steering feel, no-obstacle crashes, pass-through props
 **Phase:** 1 (awaiting go/no-go) · **Commits:** `35e4e9d`, `8ed0ae1`, `25efb0e` + this docs/build commit · **Build:** `SnowRush-v0.2.1-phase1-debug.apk` (versionCode 3, sent in chat)
 **Feedback (Keval, on v0.2.0-phase1):** "the surface has too many bumps, not feeling good." "Touch input works but the way it reacts feels a little off." "Sometimes it crashes without obstacles, maybe because of bumps." On steering: "the player tilts, which is not the correct way to steer on snow"; "when the player is on the far sides the camera stays in the center, feels off." Also: "some rocks are hiding under snow, impossible to spot, and trees and some rocks are transparent, the player goes through. Keep this in the plan so we don't miss it."

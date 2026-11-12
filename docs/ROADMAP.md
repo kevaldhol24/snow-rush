@@ -4,7 +4,7 @@
 
 ## Current status
 - **Phase:** 1 **built, waiting for Keval's go/no-go** on branch `phase-1-wip` (not merged to `main`). See the top entry of `DEVLOG.md`.
-- **Last build:** `SnowRush-v0.2.1-phase1-debug.apk` (versionCode 3, 2026-11-12): fixes from Keval's first Phase 1 feedback (bumps, steering feel, no-obstacle crashes, pass-through props). Autotest 10 seeds: ghost_fail 0, no bad_landing deaths.
+- **Last build:** `SnowRush-v0.3.0-phase1-debug.apk` (versionCode 4, 2026-11-12): carve steering (D-014), always downhill, 26 → 50 m/s (D-015), 36 m run. Autotest 10 seeds: ghost_fail 0, no errors. Earlier today: v0.2.0 (first Phase 1 build), v0.2.1 (bumps, crashes, pass-through props).
 - **Previous build:** v0.1 prototype (commit `6a25503`, lane-based). Keval's feedback: likes jumps/flips/360; start too slow; doesn't feel downhill; ramps look artificial; looks not impressive.
 - **Waiting on Keval:** (1) playtest the Phase 1 APK on the Reno 16c → go/no-go; (2) download the asset packs listed in `ASSETS.md` → commit to `assets/third_party/` (needed by Phase 2).
 
@@ -20,7 +20,7 @@ Goal: it **feels** fast, downhill and free. Visuals can stay prototype-grade, bu
 - [x] Restructure folders per `TECH.md §3` (core/player/world/fx/ui/dev); keep the game running after each step
 - [x] Slope space + world transform: tilted slope, floating origin, upright props, camera looking down the fall line
 - [x] Free-steer rider: drag carve, flick jump/tricks, board yaw/lean, carve spray; keyboard controls
-- [x] Speed curve 20 → 36 m/s, steepness effect, tuck
+- [x] Speed curve 20 → 36 m/s, steepness effect, tuck → **26 → 50 m/s** (D-015), carving across the slope bleeds speed (D-014)
 - [x] Terrain: rollers, steeps/flats, **cliff drops**, **rock/wind lips**, outcrops, crevasses, frozen river (procedural meshes for now)
 - [x] Safe-line spline + section generator + Poisson scatter + validation bot
 - [x] Analytic collision (cylinders/capsules/boxes, spatial hash), surface normal landing
@@ -31,8 +31,9 @@ Goal: it **feels** fast, downhill and free. Visuals can stay prototype-grade, bu
 - [x] Settings: steering sensitivity (3 levels), quality Low/High (shadows on/off at least)
 - [x] Autotest 10 seeds: no errors, median bot survival ≥ 1500 m (2026-11-12: ghost_fail 0, median ≈ 17.9 km)
 - [x] Feedback round 1 (v0.2.0): smoother surface (no bump hops), no accidental tricks / impossible late flips, camera follows sideways, board turns instead of bike-lean, pine hitbox = canopy, decor outside the rideable width, rocks not buried
-- [ ] Steering feel re-check on device. If still off, discuss: fixed finger anchor vs moving anchor; real carve angle (cut across the slope) vs sideways slide
-- [ ] APK → Keval (v0.2.0 sent; v0.2.1 sent 2026-11-12 with round-1 fixes, awaiting go/no-go). **Acceptance:** feels downhill + fast from the start; carving is comfortable one-handed; cliffs/lips feel natural; ≥ 55 FPS on Reno.
+- [x] Carve steering (D-014): board heading up to ±62°, arcs, travel along the board, speed bleed; run widened to 36 m; flat sections removed (D-015)
+- [ ] Steering tune on device (turn rate, speed bleed, finger travel); readability at 180 km/h
+- [ ] APK → Keval (v0.2.0, v0.2.1, v0.3.0 sent 2026-11-12; awaiting go/no-go on v0.3.0). **Acceptance:** feels downhill + fast from the start; carving is comfortable one-handed; cliffs/lips feel natural; ≥ 55 FPS on Reno.
 
 ## Phase 2: Look-dev and visual overhaul
 Goal: store-screenshot quality (see `ART_DIRECTION.md`). Approval gates at each ★.
