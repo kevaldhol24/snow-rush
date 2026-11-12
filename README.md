@@ -1,7 +1,23 @@
 # Snow Rush
 
-Endless downhill snowboard runner for Android (Subway Surfers-style), built in **Godot 4.3** (GL Compatibility renderer, portrait).
+Endless downhill **free-carve snowboarding** game for Android, built in **Godot 4.3**, by KDIT Labs.
 
+> **Status:** v0.1 lane-based prototype (tag `v0.1-prototype`). Next: Phase 1 (free steer + real downhill). See **[docs/ROADMAP.md](docs/ROADMAP.md)**.
+
+## Docs
+| Doc | What |
+|---|---|
+| [CLAUDE.md](CLAUDE.md) | Start-here for new (AI) sessions |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Phases, checklists, current status |
+| [docs/GDD.md](docs/GDD.md) | Game design |
+| [docs/ART_DIRECTION.md](docs/ART_DIRECTION.md) | Visual target, lighting, VFX, rider, boards, perf budget |
+| [docs/ASSETS.md](docs/ASSETS.md) | Free asset shortlist, pipeline, licence register |
+| [docs/TECH.md](docs/TECH.md) | Architecture, cloud setup, test commands |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Decision log |
+
+---
+
+## v0.1 prototype notes
 ## Play
 - Swipe **left / right**: change lane (3 lanes)
 - Swipe **up**: jump. **In the air**, swipe up for a **backflip**
