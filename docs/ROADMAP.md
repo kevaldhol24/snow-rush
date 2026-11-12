@@ -3,7 +3,7 @@
 > **How to use:** work top to bottom. Each phase ends with a debug APK on Keval's phone (Oppo Reno 16c) and his **go / no-go**. Tick boxes as you go and update **Current status**. Never start the next phase without his go.
 
 ## Current status
-- **Phase:** 0 done → **next: Phase 1 (Core feel)**.
+- **Phase:** 1 **in progress** on branch `phase-1-wip` (not merged). See the top entry of `DEVLOG.md` for exactly where we stopped and the next steps.
 - **Last build:** v0.1 prototype (commit `6a25503`, lane-based). Keval's feedback: likes jumps/flips/360; start too slow; doesn't feel downhill; ramps look artificial; looks not impressive.
 - **Waiting on Keval:** download the asset packs listed in `ASSETS.md` → commit to `assets/third_party/` (needed by Phase 2; can happen in parallel with Phase 1).
 

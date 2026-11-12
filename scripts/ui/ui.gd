@@ -9,6 +9,7 @@ signal revive_pressed
 signal pause_pressed
 signal resume_pressed
 signal board_changed
+signal settings_changed
 
 const FONT := preload("res://assets/fonts/lilita_one_regular.ttf")
 const C_BLUE := Color(0.16, 0.5, 0.95)
@@ -23,6 +24,10 @@ var menu: Control
 var hud: Control
 var pause_s: Control
 var over: Control
+var settings_s: Control
+var stamp_l: Label
+var speed_l: Label
+var _set_btns := {}
 var shop: Control
 
 # hud refs
@@ -64,6 +69,7 @@ func _ready() -> void:
 	_build_shop()
 	_build_pause()
 	_build_over()
+	_build_settings()
 
 # ------------------------------------------------------------------ helpers
 func _ls(size: int, col := Color.WHITE, outline := 10, oc := C_DARK) -> LabelSettings:
@@ -172,7 +178,7 @@ func _screen() -> Control:
 	return c
 
 func _hide_all() -> void:
-	for s in [menu, hud, pause_s, over, shop]:
+	for s in [menu, hud, pause_s, over, shop, settings_s]:
 		s.visible = false
 
 func _fade_in(c: Control) -> void:
@@ -255,6 +261,18 @@ func _build_hud() -> void:
 	hint_l.position = Vector2(-320, -330)
 	hint_l.size = Vector2(640, 200)
 	hud.add_child(hint_l)
+	stamp_l = _label("", 72, Color.WHITE, 14)
+	stamp_l.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	stamp_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stamp_l.position = Vector2(-300, 250)
+	stamp_l.size = Vector2(600, 90)
+	hud.add_child(stamp_l)
+	speed_l = _label("", 30, Color(0.9, 0.95, 1.0), 7)
+	speed_l.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	speed_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	speed_l.position = Vector2(-150, -90)
+	speed_l.size = Vector2(300, 50)
+	hud.add_child(speed_l)
 
 func show_hud(tutorial: bool) -> void:
 	_hide_all()
@@ -269,7 +287,7 @@ func show_hud(tutorial: bool) -> void:
 		hint_l.text = ""
 
 func _run_tutorial() -> void:
-	var steps := ["Swipe LEFT / RIGHT\nto dodge trees", "Swipe UP to jump\nrocks, logs & rivers", "In the air: swipe UP to BACKFLIP\nLEFT/RIGHT to SPIN", "Land your tricks clean!\nHit ramps for big air"]
+	var steps := ["HOLD & DRAG left / right\nto carve", "FLICK UP to jump", "Lips & cliffs launch you!\nIn the air: FLICK UP = backflip\nFLICK LEFT/RIGHT = spin", "Finish the trick before you land!"]
 	for s in steps:
 		hint_l.text = s
 		hint_l.modulate.a = 0.0
@@ -285,6 +303,7 @@ func update_hud(score: int, coins: int, dist: int, _speed: float, pus: Dictionar
 	score_l.text = str(score)
 	coins_l.text = str(coins)
 	dist_l.text = "%d m" % dist
+	speed_l.text = "%d km/h" % int(_speed * 3.6)
 	for k in pus:
 		var v: Array = pus[k]
 		var on: bool = v[0] > 0.0
@@ -369,8 +388,8 @@ func _build_menu() -> void:
 	var shop_b := _button("SHOP", C_BLUE, 42, 320, 100)
 	shop_b.pressed.connect(show_shop)
 	h.add_child(shop_b)
-	sound_b = _button("SND", C_PURPLE, 32, 120, 100)
-	sound_b.pressed.connect(_toggle_sound)
+	sound_b = _button("SET", C_PURPLE, 32, 120, 100)
+	sound_b.pressed.connect(show_settings)
 	h.add_child(sound_b)
 	# idle pulse on play button
 	play.pivot_offset = Vector2(230, 65)
@@ -384,7 +403,7 @@ func _toggle_sound() -> void:
 	_refresh_sound()
 
 func _refresh_sound() -> void:
-	sound_b.text = "SND" if Save.sound_on else "OFF"
+	pass
 
 func show_menu() -> void:
 	_hide_all()
@@ -543,6 +562,9 @@ func _build_pause() -> void:
 	var r := _button("RESUME", C_ORANGE, 50, 440, 116)
 	r.pressed.connect(func(): resume_pressed.emit())
 	v.add_child(r)
+	var sb := _button("SETTINGS", C_PURPLE, 40, 440, 96)
+	sb.pressed.connect(func(): show_settings(true))
+	v.add_child(sb)
 	var m := _button("MENU", C_BLUE, 44, 440, 104)
 	m.pressed.connect(func(): menu_pressed.emit())
 	v.add_child(m)
@@ -619,3 +641,77 @@ func show_game_over(d: Dictionary) -> void:
 	# count-up
 	var tw := create_tween()
 	tw.tween_method(func(x): o_score.text = str(int(x)), 0.0, float(d.score), 0.6)
+
+# ------------------------------------------------------------------ stamps
+func stamp(txt: String, col: Color) -> void:
+	stamp_l.text = txt
+	stamp_l.label_settings.font_color = col
+	stamp_l.pivot_offset = stamp_l.size * 0.5
+	stamp_l.scale = Vector2(1.8, 1.8)
+	stamp_l.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_property(stamp_l, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.6)
+	tw.tween_property(stamp_l, "modulate:a", 0.0, 0.25)
+
+# ------------------------------------------------------------------ SETTINGS
+var _settings_from_pause := false
+
+func _build_settings() -> void:
+	settings_s = _screen()
+	settings_s.mouse_filter = Control.MOUSE_FILTER_STOP
+	var dim := ColorRect.new()
+	dim.color = Color(0.03, 0.08, 0.2, 0.55)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	settings_s.add_child(dim)
+	var v := VBoxContainer.new()
+	v.set_anchors_preset(Control.PRESET_CENTER)
+	v.position = Vector2(-280, -360)
+	v.size = Vector2(560, 720)
+	v.add_theme_constant_override("separation", 22)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	settings_s.add_child(v)
+	var t := _label("SETTINGS", 80)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(t)
+	for row in [["sens", "STEERING"], ["quality", "GRAPHICS"], ["sound", "SOUND"], ["fps", "FPS METER"]]:
+		var h := HBoxContainer.new()
+		h.add_theme_constant_override("separation", 16)
+		var l := _label(row[1], 40)
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		h.add_child(l)
+		var b := _button("", C_BLUE, 36, 220, 90)
+		var key: String = row[0]
+		b.pressed.connect(func(): _cycle_setting(key))
+		h.add_child(b)
+		_set_btns[key] = b
+		v.add_child(h)
+	var back := _button("DONE", C_ORANGE, 48, 560, 110)
+	back.pressed.connect(func():
+		if _settings_from_pause:
+			show_pause()
+		else:
+			show_menu())
+	v.add_child(back)
+
+func _cycle_setting(key: String) -> void:
+	match key:
+		"sens": Save.settings.sens = (int(Save.settings.sens) + 1) % 3
+		"quality": Save.settings.quality = 1 - int(Save.settings.quality)
+		"fps": Save.settings.fps = not Save.settings.fps
+		"sound": Save.sound_on = not Save.sound_on
+	Save.save_data()
+	_refresh_settings()
+	settings_changed.emit()
+
+func _refresh_settings() -> void:
+	_set_btns.sens.text = ["LOW", "MEDIUM", "HIGH"][int(Save.settings.sens)]
+	_set_btns.quality.text = "HIGH" if int(Save.settings.quality) == 1 else "LOW"
+	_set_btns.sound.text = "ON" if Save.sound_on else "OFF"
+	_set_btns.fps.text = "ON" if Save.settings.fps else "OFF"
+
+func show_settings(from_pause := false) -> void:
+	_settings_from_pause = from_pause
+	_hide_all()
+	_refresh_settings()
+	_fade_in(settings_s)

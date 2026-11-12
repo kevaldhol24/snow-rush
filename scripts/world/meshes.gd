@@ -24,8 +24,8 @@ static func mat(key: String = "vc") -> ShaderMaterial:
 		"vc":
 			pass
 		"snow":
-			m.set_shader_parameter("sparkle", 0.9)
-			m.set_shader_parameter("track", true)
+			m.set_shader_parameter("sparkle", 1.2)
+			m.set_shader_parameter("terrain", true)
 		"coin":
 			m.set_shader_parameter("emission", Color(1.0, 0.75, 0.15))
 			m.set_shader_parameter("emission_energy", 0.45)
@@ -505,10 +505,10 @@ static func mountains() -> ArrayMesh:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 42
 	var segs := 64
-	var r := 420.0
+	var r := 650.0
 	var peaks := []
 	for i in segs:
-		peaks.append(rng.randf_range(50, 150) * (1.0 if i % 3 != 0 else 1.5))
+		peaks.append(rng.randf_range(200, 330) * (1.0 if i % 3 != 0 else 1.25))
 	for i in segs:
 		var j := (i + 1) % segs
 		var a0 := TAU * i / segs
@@ -531,3 +531,67 @@ static func mountains() -> ArrayMesh:
 	mt.disable_fog = true
 	m.surface_set_material(0, mt)
 	return m
+
+# ---------------------------------------------------------------- terrain feature visuals (render space)
+static func _quad2(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, col: Color) -> void:
+	_quad(st, a, b, c, d, col)
+	_quad(st, a, d, c, b, col)
+
+## Rocky band covering a cliff face from a0 (top edge) to a1 (bottom), across the whole slope.
+static func cliff_band(track: Track, a0: float, a1: float, h: float) -> MeshInstance3D:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(a0 * 13.0)
+	var st := _begin()
+	var origin := track.to_render(0.0, a0, -track.drop_at(a0))
+	var fwd := track.forward(a0)
+	var u := -95.0
+	var prev := []
+	while u <= 95.0:
+		var top := track.to_render(u, a0 - 0.3, track.height(u, a0 - 0.3) + 0.15) - origin
+		var bot := track.to_render(u, a1 + 0.8, track.height(u, a1 + 0.8) - 0.3) - origin
+		var bulge := rng.randf_range(0.5, 1.6) * (0.6 + h * 0.08)
+		var m1 := top.lerp(bot, 0.33) + fwd * bulge
+		var m2 := top.lerp(bot, 0.7) + fwd * bulge * rng.randf_range(0.6, 1.2)
+		var lip := top + fwd * 0.35 + Vector3.UP * 0.25
+		var cur := [lip, top, m1, m2, bot]
+		if not prev.is_empty():
+			var rc := ROCK if rng.randf() < 0.5 else ROCK_DARK
+			_quad2(st, prev[0], cur[0], cur[1], prev[1], SNOW)
+			_quad2(st, prev[0], cur[0], cur[2], prev[2], SNOW_SHADE)
+			_quad2(st, prev[2], cur[2], cur[3], prev[3], rc)
+			_quad2(st, prev[3], cur[3], cur[4], prev[4], rc.darkened(0.15))
+		prev = cur
+		u += rng.randf_range(1.6, 2.8)
+	var mi := MeshInstance3D.new()
+	var m := _finish(st)
+	m.surface_set_material(0, mat("vc"))
+	mi.mesh = m
+	mi.position = origin
+	return mi
+
+## Rocks under the downhill side of a lip.
+static func lip_rocks(track: Track, f: Dictionary) -> MeshInstance3D:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(f.top * 7.0)
+	var st := _begin()
+	var origin := track.to_render(f.u, f.top, track.height(f.u, f.top))
+	var fwd := track.forward(f.top)
+	var u: float = f.u - f.w + 1.0
+	var prev := []
+	while u <= f.u + f.w - 1.0:
+		var top := track.to_render(u, f.top, track.height(u, f.top) + 0.05) - origin
+		var bot := track.to_render(u, f.a1 + 0.3, track.height(u, f.a1 + 0.3) - 0.2) - origin
+		var m1 := top.lerp(bot, 0.5) + fwd * rng.randf_range(0.2, 0.6)
+		var cur := [top, m1, bot]
+		if not prev.is_empty():
+			var rc := ROCK if rng.randf() < 0.5 else ROCK_DARK
+			_quad2(st, prev[0], cur[0], cur[1], prev[1], rc)
+			_quad2(st, prev[1], cur[1], cur[2], prev[2], rc.darkened(0.15))
+		prev = cur
+		u += rng.randf_range(0.9, 1.5)
+	var mi := MeshInstance3D.new()
+	var m := _finish(st)
+	m.surface_set_material(0, mat("vc"))
+	mi.mesh = m
+	mi.position = origin
+	return mi

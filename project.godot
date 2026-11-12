@@ -14,7 +14,7 @@ config/quit_on_go_back=false
 
 [autoload]
 
-Save="*res://scripts/save.gd"
+Save="*res://scripts/core/save.gd"
 
 [display]
 
@@ -41,23 +41,15 @@ lights_and_shadows/directional_shadow/soft_shadow_filter_quality=2
 
 [shader_globals]
 
-curve_y={
-"type": "float",
-"value": 0.0018
-}
-curve_x={
-"type": "float",
-"value": 0.0
-}
 fog_color={
 "type": "color",
 "value": Color(0.80, 0.88, 0.97, 1)
 }
 fog_start={
 "type": "float",
-"value": 60.0
+"value": 70.0
 }
 fog_end={
 "type": "float",
-"value": 190.0
+"value": 230.0
 }
