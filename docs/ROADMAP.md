@@ -3,8 +3,8 @@
 > **How to use:** work top to bottom. Each phase ends with a debug APK on Keval's phone (Oppo Reno 16c) and his **go / no-go**. Tick boxes as you go and update **Current status**. Never start the next phase without his go.
 
 ## Current status
-- **Phase:** 1 ✅ **done** (Keval's go, 2026-11-12; merged to `main`). **Next: Phase 2 (look-dev)** on branch `phase-2-wip`.
-- **Last build:** `SnowRush-v0.3.1-phase1-debug.apk` (versionCode 5): carve steering (D-014), constant downhill + 26 → 50 m/s (D-015), softened sensitivity. Autotest 10 seeds: ghost_fail 0.
+- **Phase:** 1 ✅ done (merged to `main`). **Phase 2 (look-dev) in progress** on branch `phase-2-wip`: step 1 done (snow shader, inverted-normals fix, carve trails).
+- **Last build:** `SnowRush-v0.4.0-phase2-debug.apk` (versionCode 6): Phase 2 step 1 look check. Previous: v0.3.1 (Phase 1 final).
 - **Waiting on Keval:** the asset packs in `ASSETS.md` (Quaternius Stylized Nature MegaKit + Universal Animation Library / a rigged body, Kenney Nature + Holiday kits, ambientCG snow/rock textures). The cloud session can't download them; commit to `assets/third_party/` or upload the zips in a session. Phase 2 starts with the parts that need no packs.
 
 ---
@@ -38,8 +38,11 @@ Goal: it **feels** fast, downhill and free. Visuals can stay prototype-grade, bu
 ## Phase 2: Look-dev and visual overhaul
 Goal: store-screenshot quality (see `ART_DIRECTION.md`). Approval gates at each ★.
 - [ ] Import pipeline for third-party packs (scale, origin, shared materials, LOD/impostor), `assets/third_party` excluded from export
-- [ ] `snow.gdshader`: wrap lighting, blue shadows, detail normals, view-dependent glitter, slope tint, rock blend
-- [ ] **Board carve trails** (ribbon) + landing decals
+- [x] `snow.gdshader`: wrap lighting, blue shadows, view-dependent glitter, slope tint, powder rim (v0.4.0)
+- [ ] Snow detail normal maps + rock blend on very steep faces (needs ambientCG textures)
+- [x] Fix: inverted normals on all procedural meshes (props were lit from behind since v0.1)
+- [x] **Board carve trails** (ribbon) (v0.4.0)
+- [ ] Landing decals
 - [ ] `prop.gdshader`: snow cap by normal, wind sway, rim, fog
 - [ ] Trees (3–4 pines + dead + birch), rocks, cliff bands and lips from packs; tree LOD/impostors
 - [ ] **Obstacle readability** (Keval, 2026-11-12): every colliding obstacle must be clearly visible at 30+ m (rocks: snow caps + contrast; no prop half-buried). Every visible prop is either colliding or clearly outside the run (no pass-through)

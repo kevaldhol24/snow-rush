@@ -15,6 +15,22 @@ One entry per task or session, **newest at the top**. Append; never rewrite hist
 
 ---
 
+## 2026-11-12: Phase 2 step 1: snow shader, inverted-normals fix, carve trails (branch `phase-2-wip`)
+**Phase:** 2 (look-dev, step 1) · **Commits:** `44fede3`, `c478029` + this docs/build commit · **Build:** `SnowRush-v0.4.0-phase2-debug.apk` (versionCode 6, sent in chat for a look check)
+**Why:** Keval: "let's now work on phase 2, looks and graphics". The asset packs are still not in the repo, so step 1 covers the ART_DIRECTION items that need none: the snow material (§4, 60% of the screen), board tracks (§4, "the key detail that sells snow"), lighting (§2/§3).
+**What:**
+- **Bug fix (since v0.1): every procedural mesh had inverted normals.** `Meshes._finish()` called `generate_normals()`, which pointed normals inward for our `_tri()` winding. New `scenes/dev/normal_probe.tscn` measured the tops of rocks/pines/snowman at normal.y ≈ −0.55. Props were lit from behind, hence the dark navy rocks, flat blue-teal pines and no visible snow. Fixed with `generate_normals(true)` (tops now +0.87). This is likely a big part of "looks not impressive".
+- Retuned for correct lighting: rock tones darker (`ROCK` 0.29/0.30/0.36, `ROCK_DARK` 0.19/0.20/0.25) and snow only on the top ring, so rocks stay easy to spot (Keval's note). Coins: emission 0.3, metallic 0, rim 0.1 (they had washed out to pale lemon).
+- **`shaders/snow.gdshader`:** wrap lighting (0.35), blue shadow fill (#9DB4E8), sun gain 0.78 (lit snow ≈ 243/254/255, just under clipping), view-dependent glitter in 5 cm world cells (only near the camera), powder rim, slope tint, wind patches + fall-line streaks. Custom `light()` is Compat-safe; glitter distance passed fragment→light via a varying (`CAMERA_POSITION_WORLD` isn't available in `light()`). Gotcha: `LIGHT_COLOR` already includes π, so fill terms need `/PI`.
+- `world.gdshader`: optional `snow_cap` by world normal. Off for procedural props (from above it whitened whole rocks); meant for the imported packs.
+- **Carve trails** (`fx/carve_trail.gd` + `carve_trail.gdshader`): ribbon with two soft edge grooves + pressed base, alpha-blended toward shadow blue (`blend_mul` rendered as a solid dark band in GL Compat). Width/depth scale with carve intensity; breaks in the air and over openings; fades over 70 m; 128-sample ring, no allocations. Vertices are computed once in node-local space; the node sits under `World.root`, which World already shifts on rebase (an explicit shift would have doubled it). Verified past a rebase (a = 397).
+- Sun colour #FFF2DC (Pine Forest morning).
+
+**Result:** autotest 10 seeds: ghost_fail 0, no script errors, no ImmediateMesh errors; bot results identical to before (visual-only change). Before/after sheets sent (same seeds/sections, rendered from `main` vs `phase-2-wip`).
+**Still to do in Phase 2 (see ROADMAP):** detail normal maps (need ambientCG textures), landing decals, lit powder spray, sky shader, particles, rider + board models, trees/rocks from packs, biomes, menu scene, quality presets.
+**Blocked on Keval:** asset packs (rider body + nature props) → upload or commit to `assets/third_party/`.
+**Next:** Keval's look feedback on v0.4.0, then step 2: particles (lit powder, landing burst, speed lines), sky shader, snowboard model + top sheets (scripted, no packs needed).
+
 ## 2026-11-12: Steering sensitivity + Phase 1 sign-off, merged to main
 **Phase:** 1 → **done** (Keval's go) · **Commits:** sensitivity commit + this docs/merge commit · **Build:** `SnowRush-v0.3.1-phase1-debug.apk` (versionCode 5, sent in chat)
 **Feedback (Keval, on v0.3.0):** "it is good but now it is a little bit uncontrollable, like too much sensitive. And let's now work on phase 2, looks and graphics." → treated as the Phase 1 go, with the sensitivity fix included.
