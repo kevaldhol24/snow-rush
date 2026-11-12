@@ -2,7 +2,7 @@
 
 Endless downhill **free-carve snowboarding** game for Android, built in **Godot 4.3**, by KDIT Labs.
 
-> **Status:** v0.1 lane-based prototype (tag `v0.1-prototype`). Next: Phase 1 (free steer + real downhill). See **[docs/ROADMAP.md](docs/ROADMAP.md)**.
+> **Status:** v0.1 lane-based prototype (commit `6a25503`). Next: Phase 1 (free steer + real downhill). See **[docs/ROADMAP.md](docs/ROADMAP.md)**.
 
 ## Docs
 | Doc | What |

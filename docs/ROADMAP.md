@@ -4,7 +4,7 @@
 
 ## Current status
 - **Phase:** 0 done → **next: Phase 1 (Core feel)**.
-- **Last build:** v0.1 prototype (tag `v0.1-prototype`, lane-based). Keval's feedback: likes jumps/flips/360; start too slow; doesn't feel downhill; ramps look artificial; looks not impressive.
+- **Last build:** v0.1 prototype (commit `6a25503`, lane-based). Keval's feedback: likes jumps/flips/360; start too slow; doesn't feel downhill; ramps look artificial; looks not impressive.
 - **Waiting on Keval:** download the asset packs listed in `ASSETS.md` → commit to `assets/third_party/` (needed by Phase 2; can happen in parallel with Phase 1).
 
 ---

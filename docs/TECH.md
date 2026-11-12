@@ -5,7 +5,7 @@
 - Android export, non-gradle for test builds (debug keystore in `ci/`). Phase 5 moves release builds to gradle (needed for the AdMob plugin) + AAB + private release keystore (GitHub secret).
 - CI: `.github/workflows/android.yml` builds a debug APK on push to `main` → download from Actions artifacts.
 
-## 2. Current code (v0.1 prototype, tag `v0.1-prototype`)
+## 2. Current code (v0.1 prototype, commit `6a25503`)
 | File | Role | Fate in v0.2 |
 |---|---|---|
 | `scripts/game.gd` | States (MENU/PLAY/PAUSED/DEAD), swipe input, scoring, pickups, camera, env, audio, autopilot, screenshot tooling | Split: `game.gd` (state/score) + `input.gd` + `camera_rig.gd` + `env_manager.gd` + `dev_tools.gd` |
