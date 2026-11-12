@@ -164,17 +164,18 @@ func spawn_obstacle(t: String, u: float, a: float, opt: Dictionary) -> void:
 			mesh = Meshes.pine(v)
 			var s := rng.randf_range(0.95, 1.3)
 			sc = Vector3(s, s * rng.randf_range(0.95, 1.15), s)
-			r = 0.65
-			ra = 0.65
+			# canopy is ~1.8-2.6 m wide at the bottom; 0.65 let you ride visibly through branches
+			r = 1.15
+			ra = 1.15
 		"rock":
 			var v2 := rng.randi() % 4
 			key = "rock%d" % v2
 			mesh = Meshes.rock(v2)
 			var s2 := rng.randf_range(0.85, 1.05)
-			sc = Vector3(1.2, 0.9, 1.1) * s2
+			sc = Vector3(1.2, 1.25, 1.1) * s2 # taller: was 0.9 and read as a bump in the snow
 			r = 1.0 * s2
 			ra = 0.9 * s2
-			h = 0.85 * s2
+			h = 1.05 * s2
 		"boulder":
 			var v3 := rng.randi() % 4
 			key = "rock%d" % v3
@@ -199,7 +200,16 @@ func spawn_obstacle(t: String, u: float, a: float, opt: Dictionary) -> void:
 	var n := pool.take(key, mesh)
 	n.scale = sc
 	n.rotation.y = yaw
-	n.position = track.to_render(u, a, track.height(u, a) - 0.1)
+	var base_y := track.height(u, a)
+	if t == "rock" or t == "boulder":
+		# flat-bottomed mesh: sit on the HIGHEST ground under the footprint (uphill side), else the
+		# slope buries the part the player sees from behind
+		for d in [Vector2(0, -r), Vector2(r, 0), Vector2(-r, 0)]:
+			base_y = max(base_y, track.height(u + d.x, a + d.y))
+		base_y -= 0.05
+	else:
+		base_y -= 0.1
+	n.position = track.to_render(u, a, base_y)
 	var o := {"type": t, "u": u, "a": a, "r": r, "ra": ra, "h": h, "node": n, "dead": false}
 	# keep sorted by a (queries early-out on it)
 	var i := obstacles.bsearch_custom(a, func(x, val): return x.a < val)

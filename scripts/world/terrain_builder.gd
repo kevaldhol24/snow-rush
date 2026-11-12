@@ -101,19 +101,20 @@ static func decor(track: Track, a0: float, origin: Vector3, seed_v: int, density
 	for i in n:
 		var side := -1.0 if r.randf() < 0.5 else 1.0
 		var e := pow(r.randf(), 1.5) * 70.0
-		var u := side * (Track.HALF_W + 1.8 + e)
+		var s := r.randf_range(0.85, 1.5) * (1.0 + e * 0.012)
+		# decor has no collision: keep the whole canopy (radius ~2.1*s) beyond the rider clamp
+		var u := side * (Track.EDGE + 0.5 + 2.1 * s + e)
 		var a := a0 + r.randf() * CHUNK_LEN
 		if not track.feature_at(a, "river").is_empty():
 			continue
 		var y := track.height(u, a)
-		var s := r.randf_range(0.85, 1.5) * (1.0 + e * 0.012)
 		var b := Basis(Vector3.UP, r.randf() * TAU).scaled(Vector3(s, s * r.randf_range(0.9, 1.3), s))
 		out["pine%d" % (r.randi() % 3)].append(Transform3D(b, track.to_render(u, a, y - 0.25) - origin))
 	for i in int(6 * density):
 		var side := -1.0 if r.randf() < 0.5 else 1.0
-		var u := side * (Track.HALF_W + 0.5 + r.randf() * 30.0)
-		var a := a0 + r.randf() * CHUNK_LEN
 		var s := r.randf_range(0.6, 2.4)
+		var u := side * (Track.EDGE + 0.5 + 1.35 * s + r.randf() * 30.0)
+		var a := a0 + r.randf() * CHUNK_LEN
 		var b := Basis(Vector3.UP, r.randf() * TAU).scaled(Vector3(s, s * 0.75, s))
 		out["rock"].append(Transform3D(b, track.to_render(u, a, track.height(u, a) - 0.2) - origin))
 	# course marker poles every 16 m
@@ -122,7 +123,7 @@ static func decor(track: Track, a0: float, origin: Vector3, seed_v: int, density
 		if not track.feature_at(a, "river").is_empty() or not track.feature_at(a, "cliff").is_empty():
 			continue
 		for side in [-1.0, 1.0]:
-			var u: float = side * (Track.HALF_W + 0.6)
+			var u: float = side * (Track.EDGE + 0.6)
 			var b := Basis(Vector3.UP, -track.heading(a))
 			out["pole"].append(Transform3D(b, track.to_render(u, a, track.height(u, a)) - origin))
 	return out
