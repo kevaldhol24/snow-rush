@@ -7,12 +7,13 @@ const SNOW_SHADE := Color(0.76, 0.84, 0.97)
 const PINE := Color(0.13, 0.42, 0.30)
 const PINE_DARK := Color(0.09, 0.30, 0.24)
 const BARK := Color(0.42, 0.26, 0.16)
-const ROCK := Color(0.47, 0.50, 0.56)
-const ROCK_DARK := Color(0.34, 0.36, 0.42)
+const ROCK := Color(0.29, 0.30, 0.36) # darker since the normal fix: must pop against lit snow
+const ROCK_DARK := Color(0.19, 0.20, 0.25)
 
 static var _cache := {}
 static var _mats := {}
 static var world_shader: Shader = preload("res://shaders/world.gdshader")
+static var snow_shader: Shader = preload("res://shaders/snow.gdshader")
 
 # ---------------------------------------------------------------- materials
 static func mat(key: String = "vc") -> ShaderMaterial:
@@ -22,16 +23,15 @@ static func mat(key: String = "vc") -> ShaderMaterial:
 	m.shader = world_shader
 	match key:
 		"vc":
-			pass
+			pass # procedural props paint their own snow; snow_cap (world.gdshader) is for imported packs
 		"snow":
-			m.set_shader_parameter("sparkle", 1.2)
-			m.set_shader_parameter("terrain", true)
+			m.shader = snow_shader # Phase 2 snow material (shaders/snow.gdshader)
 		"coin":
 			m.set_shader_parameter("emission", Color(1.0, 0.75, 0.15))
-			m.set_shader_parameter("emission_energy", 0.45)
-			m.set_shader_parameter("metallic", 0.6)
-			m.set_shader_parameter("roughness", 0.3)
-			m.set_shader_parameter("rim_strength", 0.35)
+			m.set_shader_parameter("emission_energy", 0.3) # coins face the camera = backlit by the sun ahead
+			m.set_shader_parameter("metallic", 0.0) # metallic mirrored the pale sky -> washed-out coins
+			m.set_shader_parameter("roughness", 0.35)
+			m.set_shader_parameter("rim_strength", 0.1) # white rim washed coins out once normals were fixed
 		"glow":
 			m.set_shader_parameter("emission", Color(1, 1, 1))
 			m.set_shader_parameter("emission_energy", 0.6)
@@ -83,7 +83,10 @@ static func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector
 	_tri(st, a, c, d, col)
 
 static func _finish(st: SurfaceTool) -> ArrayMesh:
-	st.generate_normals()
+	# _tri() emits (a, c, b) so faces are front-facing in Godot, but generate_normals() then points
+	# them INWARD (checked with scenes/dev/normal_probe.tscn: tops had normal.y ~ -0.55). Inverted
+	# normals lit every prop from behind (dark navy rocks, dark pines, no snow caps). Flip them.
+	st.generate_normals(true)
 	return st.commit()
 
 static func _begin() -> SurfaceTool:
@@ -188,8 +191,9 @@ static func rock(seed_v: int = 0) -> ArrayMesh:
 			var c: Vector3 = pts[ri + 1][sj]
 			var d: Vector3 = pts[ri + 1][si]
 			var col := ROCK if (si + ri) % 2 == 0 else ROCK_DARK
-			if ri >= rings - 2:
-				col = SNOW if ri == rings - 1 else (SNOW_SHADE if si % 2 == 0 else ROCK)
+			# readability (Keval: rocks must be easy to spot): only the top ring is snow, sides stay rock
+			if ri == rings - 1:
+				col = SNOW
 			_quad(st, a, b, c, d, col)
 	var m := _finish(st)
 	m.surface_set_material(0, mat("vc"))

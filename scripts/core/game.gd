@@ -136,7 +136,7 @@ func _setup_environment() -> void:
 	sun = DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-32, 160, 0) # low sun from ahead-left: long shadows toward camera
 	sun.light_energy = 1.25
-	sun.light_color = Color(1.0, 0.97, 0.92)
+	sun.light_color = Color(1.0, 0.949, 0.863) # #FFF2DC Pine Forest morning (ART_DIRECTION §2)
 	sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	sun.directional_shadow_max_distance = 34.0

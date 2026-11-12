@@ -16,11 +16,14 @@ uniform float metallic : hint_range(0.0, 1.0) = 0.0;
 uniform float rim_strength = 0.0;
 uniform float sparkle = 0.0; // snow glitter
 uniform bool terrain = false; // subtle large-scale snow tint variation
+uniform float snow_cap = 0.0; // Phase 2: snow settles on up-facing surfaces (rocks, logs, crags)
 
 varying vec3 v_world;
+varying vec3 v_wn;
 
 void vertex() {
 	v_world = VERTEX;
+	v_wn = NORMAL;
 }
 
 float hash(vec3 p) {
@@ -44,6 +47,11 @@ void fragment() {
 	vec3 col = albedo.rgb;
 	if (use_vertex_color) {
 		col *= COLOR.rgb;
+	}
+	if (snow_cap > 0.0) {
+		// soft, slightly noisy snow line so caps don't look like a hard paint split
+		float cap = smoothstep(0.72, 0.92, v_wn.y + (hash(floor(v_world * 3.0)) - 0.5) * 0.12);
+		col = mix(col, vec3(0.93, 0.95, 1.0), cap * snow_cap);
 	}
 	if (terrain) {
 		// soft wind-blown patches so the snow is not one flat colour
