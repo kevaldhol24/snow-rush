@@ -9,6 +9,8 @@ global uniform float fog_end;
 
 uniform vec4 albedo : source_color = vec4(1.0);
 uniform bool use_vertex_color = true;
+uniform bool use_tex = false; // Phase 2: pack props (Kenney colormap atlas)
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap, repeat_enable;
 uniform vec3 emission : source_color = vec3(0.0);
 uniform float emission_energy = 0.0;
 uniform float roughness : hint_range(0.0, 1.0) = 0.9;
@@ -47,6 +49,9 @@ void fragment() {
 	vec3 col = albedo.rgb;
 	if (use_vertex_color) {
 		col *= COLOR.rgb;
+	}
+	if (use_tex) {
+		col *= texture(albedo_tex, UV).rgb;
 	}
 	if (snow_cap > 0.0) {
 		// soft, slightly noisy snow line so caps don't look like a hard paint split

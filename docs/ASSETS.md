@@ -6,7 +6,8 @@
 - Prefer **glTF/GLB**. FBX is OK (Godot imports FBX via ufbx in 4.3).
 
 ## Important limitation of the cloud dev environment
-Claude's cloud sessions can download from **GitHub, npm and PyPI only**. Quaternius (Google Drive), Kenney.nl, itch.io, Poly Haven, ambientCG, Sketchfab, Mixamo, Pixabay and freesound are **blocked** there.
+Claude's cloud sessions can download from **GitHub, npm and PyPI**, plus (since 2026-11-12, Keval opened access) **kenney.nl, quaternius.com and dl.google.com**. Still **blocked**: itch.io (so Quaternius packs, which download via itch), Google Drive, Poly Haven, ambientCG, Sketchfab, Mixamo, Pixabay, freesound.
+→ Kenney download from a session: GET the asset page with a browser User-Agent + cookie jar, read `data-download-id`, GET `https://kenney.nl/download-link/<id>` (JSON with a signed URL), then download that URL with the same cookies.
 → **Keval downloads the packs below on his PC and commits them to `assets/third_party/`** (or uploads the zips to a session). After that, Claude processes them (import, recolour, LOD, snow-cap shader, etc.).
 → Packs that already live on GitHub (KayKit, Kenney starter kits) can be pulled by Claude directly.
 
@@ -47,8 +48,9 @@ Claude's cloud sessions can download from **GitHub, npm and PyPI only**. Quatern
 - App icon / feature graphic rendered from in-game.
 
 ## Pipeline
-1. Drop the pack into `assets/third_party/<pack>/` (keep LICENSE).
-2. Claude writes an import script (`tools/` or a Godot `EditorScenePostImport`) to: scale to metres, recentre the origin at the base, assign the shared `world.gdshader` material with the pack texture (snow cap + curve + fog), generate LOD/impostor, and save to `assets/models/<category>/`.
+1. Drop the pack into `assets/third_party/<pack>/` (keep LICENSE). The folder has a `.gdignore` (not imported) and is excluded from export (`exclude_filter`).
+2. Copy only the models the game uses into `assets/models/env/<pack>/`. At runtime `PackProps.mesh(model, size, snow_cap)` (scripts/world/pack_props.gd) bakes transform + size + base-centred origin, recolours summer materials for winter (`RECOLOR`) and puts all surfaces on `world.gdshader` (fog, texture atlas, snow cap). `scenes/dev/pack_probe.tscn` lists model sizes/materials.
+3. (Original plan) Claude writes an import script (`tools/` or a Godot `EditorScenePostImport`) to: scale to metres, recentre the origin at the base, assign the shared `world.gdshader` material with the pack texture (snow cap + curve + fog), generate LOD/impostor, and save to `assets/models/<category>/`.
 3. Add a row below.
 4. Check APK size: target **≤ 80 MB** AAB download. Strip unused pack files from the export via `export_presets.cfg` exclude filters (`assets/third_party/*` is not exported; only processed copies are).
 
@@ -59,4 +61,6 @@ Claude's cloud sessions can download from **GitHub, npm and PyPI only**. Quatern
 | coin/jump/land/fall/break .ogg | github.com/KenneyNL/Starter-Kit-3D-Platformer | CC0 (Kenney) | Kenney | SFX |
 | Lilita One font | via Kenney Starter Kit 3D Platformer | SIL OFL 1.1 | Juan Montoreano | UI font |
 | wind/whoosh/splash/powerup .wav | generated (Python) | own | KDIT Labs | SFX |
-| All trees/rocks/ramps/coins/terrain in v0.1 | procedural code | own | KDIT Labs | v0.1 visuals (to be replaced) |
+| All trees/rocks/ramps/coins/terrain in v0.1 | procedural code | own | KDIT Labs | v0.1 visuals (partly replaced in v0.4.1) |
+| Kenney **Holiday Kit** (raw: `assets/third_party/kenney_holiday_kit/`) → `tree-snow-a/b/c`, `snowman`, `snowman-hat`, `rocks-large`, `rocks-medium`, `sled`, `lantern` + `Textures/colormap.png` in `assets/models/env/kenney/` | kenney.nl/assets/holiday-kit | CC0 | Kenney | Snowy pine obstacles + decor, snowmen, rock obstacles/boulders/decor (v0.4.1) |
+| Kenney **Nature Kit** 2.1 (raw: `assets/third_party/kenney_nature_kit/`) → `tree_pineTallA–D_detailed`, `tree_pineRoundA/C`, `rock_largeA–D`, `rock_tallA/B/E`, `log_large`, `stump_old`, `stump_round` in `assets/models/env/kenney/` | kenney.nl/assets/nature-kit | CC0 | Kenney | Tall pine decor (recoloured + shader snow cap), rock obstacles, logs (v0.4.1) |

@@ -140,10 +140,12 @@ func _release_chunk(c: Dictionary) -> void:
 
 func _decor_mesh(key: String) -> Mesh:
 	match key:
-		"pine0": return Meshes.pine(0)
-		"pine1": return Meshes.pine(1)
-		"pine2": return Meshes.pine(2)
-		"rock": return Meshes.rock(5)
+		# Phase 2: Kenney packs (CC0) via PackProps. Decor canopy radius ~2.1*s is assumed by
+		# TerrainBuilder.decor() to keep non-colliding trees outside the rideable width.
+		"pine0": return PackProps.mesh("tree-snow-a", Vector3(0, 6.0, 0))
+		"pine1": return PackProps.mesh("tree-snow-c", Vector3(0, 6.0, 0))
+		"pine2": return PackProps.mesh("tree_pineTallD_detailed", Vector3(0, 8.0, 0), 1.0)
+		"rock": return PackProps.mesh("rocks-medium", Vector3(2.0, 0.9, 2.0))
 		"pole": return Meshes.pole(Color(0.95, 0.35, 0.1))
 	return null
 
@@ -159,40 +161,44 @@ func spawn_obstacle(t: String, u: float, a: float, opt: Dictionary) -> void:
 	var yaw := rng.randf() * TAU
 	match t:
 		"pine":
-			var v := rng.randi() % 3
-			key = "pine%d" % v
-			mesh = Meshes.pine(v)
-			var s := rng.randf_range(0.95, 1.3)
-			sc = Vector3(s, s * rng.randf_range(0.95, 1.15), s)
-			# canopy is ~1.8-2.6 m wide at the bottom; 0.65 let you ride visibly through branches
-			r = 1.15
-			ra = 1.15
+			# Kenney Holiday snowy pines, 6 m tall: canopy radius ~1.85*s at the bottom.
+			# Hitbox ~2/3 of the canopy (0.65 m used to let you ride visibly through branches).
+			var pm := ["tree-snow-a", "tree-snow-b", "tree-snow-c"][rng.randi() % 3] as String
+			key = "p_" + pm
+			mesh = PackProps.mesh(pm, Vector3(0, 6.0, 0))
+			var s := rng.randf_range(0.9, 1.15)
+			sc = Vector3(s, s * rng.randf_range(0.95, 1.1), s)
+			r = 1.25 * s
+			ra = 1.25 * s
 		"rock":
-			var v2 := rng.randi() % 4
-			key = "rock%d" % v2
-			mesh = Meshes.rock(v2)
+			# tall-ish rocks with snow tops: 2 m across, 1.4 m high, so they read at speed (Keval)
+			var rm := ["rock_tallA", "rock_tallB", "rocks-medium"][rng.randi() % 3] as String
+			key = "p_" + rm
+			mesh = PackProps.mesh(rm, Vector3(2.0, 1.4, 2.0))
 			var s2 := rng.randf_range(0.85, 1.05)
-			sc = Vector3(1.2, 1.25, 1.1) * s2 # taller: was 0.9 and read as a bump in the snow
+			sc = Vector3.ONE * s2
 			r = 1.0 * s2
 			ra = 0.9 * s2
-			h = 1.05 * s2
+			h = 1.4 * s2
 		"boulder":
-			var v3 := rng.randi() % 4
-			key = "rock%d" % v3
-			mesh = Meshes.rock(v3)
+			var bm := ["rocks-large", "rock_tallA"][rng.randi() % 2] as String
+			key = "pb_" + bm
+			mesh = PackProps.mesh(bm, Vector3(2.0, 1.15, 2.0))
 			var s3 := rng.randf_range(1.7, 2.3)
-			sc = Vector3(1.0, 1.1, 1.0) * s3
+			sc = Vector3.ONE * s3
 			r = 0.95 * s3
 			ra = 0.85 * s3
 		"snowman":
-			mesh = Meshes.snowman()
+			var hat := rng.randf() < 0.5
+			key = "snowman_hat" if hat else "snowman"
+			mesh = PackProps.mesh("snowman-hat", Vector3(0, 2.3, 0)) if hat else PackProps.mesh("snowman", Vector3(0, 1.9, 0))
 			yaw = -track.heading(a) + PI + rng.randf_range(-0.4, 0.4)
 			r = 0.75
 			ra = 0.75
 		"log":
 			var half: float = opt.get("half", 3.0)
 			key = "log%.1f" % (half * 2.0)
-			mesh = Meshes.log_mesh(half * 2.0)
+			mesh = PackProps.mesh("log_large", Vector3(half * 2.0, 0.8, 0.9))
 			yaw = -track.heading(a) + rng.randf_range(-0.06, 0.06)
 			r = half
 			ra = 0.55
