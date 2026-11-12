@@ -3,9 +3,9 @@
 > **How to use:** work top to bottom. Each phase ends with a debug APK on Keval's phone (Oppo Reno 16c) and his **go / no-go**. Tick boxes as you go and update **Current status**. Never start the next phase without his go.
 
 ## Current status
-- **Phase:** 1 ✅ done (merged to `main`). **Phase 2 (look-dev) in progress** on branch `phase-2-wip`: step 1 done (snow shader, inverted-normals fix, carve trails).
-- **Last build:** `SnowRush-v0.4.0-phase2-debug.apk` (versionCode 6): Phase 2 step 1 look check. Previous: v0.3.1 (Phase 1 final).
-- **Waiting on Keval:** the asset packs in `ASSETS.md` (Quaternius Stylized Nature MegaKit + Universal Animation Library / a rigged body, Kenney Nature + Holiday kits, ambientCG snow/rock textures). The cloud session can't download them; commit to `assets/third_party/` or upload the zips in a session. Phase 2 starts with the parts that need no packs.
+- **Phase:** 1 ✅ done (merged to `main`). **Phase 2 (look-dev) in progress** on branch `phase-2-wip`: step 1 (snow shader, normals fix, carve trails) + step 2 (Kenney packs for trees/rocks/snowmen, top-speed fairness fixes) done.
+- **Last build:** `SnowRush-v0.4.1-phase2-debug.apk` (versionCode 7): Kenney packs. Previous: v0.4.0 (step 1), v0.3.1 (Phase 1 final).
+- **Waiting on Keval:** look feedback on v0.4.1; a **Quaternius rigged character + Universal Animation Library** zip (quaternius.com downloads go via itch.io, still blocked) and ideally ambientCG snow/rock textures (blocked). Kenney kits are in (downloaded from the session).
 
 ---
 
@@ -37,14 +37,16 @@ Goal: it **feels** fast, downhill and free. Visuals can stay prototype-grade, bu
 
 ## Phase 2: Look-dev and visual overhaul
 Goal: store-screenshot quality (see `ART_DIRECTION.md`). Approval gates at each ★.
-- [ ] Import pipeline for third-party packs (scale, origin, shared materials, LOD/impostor), `assets/third_party` excluded from export
+- [x] Import pipeline for third-party packs (scale, origin, shared materials), `assets/third_party` excluded from export (`PackProps`, v0.4.1)
+- [ ] Tree LOD / impostors (only if on-device FPS needs it)
 - [x] `snow.gdshader`: wrap lighting, blue shadows, view-dependent glitter, slope tint, powder rim (v0.4.0)
 - [ ] Snow detail normal maps + rock blend on very steep faces (needs ambientCG textures)
 - [x] Fix: inverted normals on all procedural meshes (props were lit from behind since v0.1)
 - [x] **Board carve trails** (ribbon) (v0.4.0)
 - [ ] Landing decals
 - [ ] `prop.gdshader`: snow cap by normal, wind sway, rim, fog
-- [ ] Trees (3–4 pines + dead + birch), rocks, cliff bands and lips from packs; tree LOD/impostors
+- [x] Trees (snowy pines + tall pines) and rocks from Kenney packs (v0.4.1)
+- [ ] Dead tree + birch (Birch Valley), cliff bands and lip rocks from pack pieces
 - [ ] **Obstacle readability** (Keval, 2026-11-12): every colliding obstacle must be clearly visible at 30+ m (rocks: snow caps + contrast; no prop half-buried). Every visible prop is either colliding or clearly outside the run (no pass-through)
 - [ ] Sky shader (gradient, sun, clouds), layered mountain silhouettes, height fog
 - [ ] Biome system + 2 biomes fully dressed (Pine Forest morning, Frozen Lakes golden hour) ★

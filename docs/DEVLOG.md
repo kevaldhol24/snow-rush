@@ -15,6 +15,22 @@ One entry per task or session, **newest at the top**. Append; never rewrite hist
 
 ---
 
+## 2026-11-12: Phase 2 step 2: Kenney packs for trees/rocks/snowmen + fairness fixes at top speed
+**Phase:** 2 · **Commits:** `941fc5b`, `94eba3e` + this docs/build commit · **Build:** `SnowRush-v0.4.1-phase2-debug.apk` (versionCode 7, 50.2 MB, sent in chat)
+**Context:** Keval opened network access ("you should be able to download now"). Probed: **kenney.nl, quaternius.com, dl.google.com reachable**; itch.io, Google Drive, Poly Haven, ambientCG still blocked (proxy 403). Quaternius packs download via itch.io, so they're still unreachable (rider body + Stylized Nature MegaKit). GitHub push still blocked (account not linked to Claude).
+**What:**
+- Downloaded **Kenney Holiday Kit + Nature Kit 2.1 (CC0)** via kenney.nl's signed download links (recipe in ASSETS.md). Raw GLBs + licences in `assets/third_party/` (`.gdignore`, excluded from export); 24 used models + the Holiday colormap atlas in `assets/models/env/kenney/`.
+- **`PackProps`** (scripts/world/pack_props.gd): runtime pipeline. Bakes the GLB node transform + target size + base-centred origin into a cached ArrayMesh, recolours Nature Kit summer materials for winter (`leafsDark` → pine green, `dirt` → slate rock, rock `grass` tops → snow), and puts every surface on `world.gdshader` (same fog/lighting; new `albedo_tex` for the atlas; optional snow cap). `scenes/dev/pack_probe.tscn` lists sizes/materials.
+- **Obstacles:** snowy pines (`tree-snow-a/b/c`, 6 m, hitbox 1.25·s ≈ ⅔ of the canopy, still ≥ 0.8 m inside SAFE_CLEAR); rocks (`rock_tallA/B`, `rocks-medium`) at 2 m × 1.4 m with snow tops, hit height 1.4 (taller = readable at speed, Keval's ask); boulders (`rocks-large`, `rock_tallA`); snowmen (with/without hat); logs (`log_large`). **Decor:** snowy pines + tall Nature pines with the shader snow cap; rock clusters.
+- **Fairness bugs found by the ghost at D-015 speeds** (exposed because the new props shifted the generator's RNG stream):
+  - Seed 4, a = 15839: at 51 m/s a fixed 1.5 m river lip left the ghost 0.4 m short of the far bank → lip height now `1.5 + 0.035·(speed − 28)`.
+  - Seed 10, a = 9501: two rivers back to back. The first jump flew **86 m** at 54 m/s and landed on the second lip's crest at −41 m/s → no launch → water. River run-in is now `max(35, 1.7·speed)`.
+- **Autotest reproducibility:** the bot's trick choices used the unseeded `randf()` → landing mods → speed → generator, so runs differed between invocations. `--autotest --seed=N` now seeds the global RNG.
+- **Bot:** dodges toward the safe line instead of "whichever side I'm on" (seed 2 hit a pine at 208 m: dodged away from the guaranteed-clear line; slower D-014 turning made that fatal).
+
+**Result:** 10 seeds: **ghost_fail 0**, no script errors; 7/10 alive at the 200 s cap (22+ km), deaths: boulders at 2.6 / 12.8 / 16.6 km (bot skill). APK 50.2 MB (+0.3 MB); no third_party files inside. Before/after sheets sent (v0.4.0 vs v0.4.1, same seeds).
+**Next:** Keval's look feedback. Rider still the v0.1 KayKit rogue: needs a Quaternius rigged body (itch.io blocked; Keval to upload the zip) or an alternative. Phase 2 step 3 (no packs needed): particles (lit powder, landing burst, speed lines), sky shader, snowboard model + top sheets, cliff/lip rocks from Nature Kit cliff pieces.
+
 ## 2026-11-12: Phase 2 step 1: snow shader, inverted-normals fix, carve trails (branch `phase-2-wip`)
 **Phase:** 2 (look-dev, step 1) · **Commits:** `44fede3`, `c478029` + this docs/build commit · **Build:** `SnowRush-v0.4.0-phase2-debug.apk` (versionCode 6, sent in chat for a look check)
 **Why:** Keval: "let's now work on phase 2, looks and graphics". The asset packs are still not in the repo, so step 1 covers the ART_DIRECTION items that need none: the snow material (§4, 60% of the screen), board tracks (§4, "the key detail that sells snow"), lighting (§2/§3).
