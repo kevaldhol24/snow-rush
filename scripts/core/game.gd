@@ -3,8 +3,10 @@ extends Node3D
 
 enum State { MENU, PLAY, PAUSED, DEAD }
 
-const START_SPEED := 20.0
-const MAX_SPEED := 36.0
+const START_SPEED := 26.0 # D-015 (was 20)
+const MAX_SPEED := 50.0 # D-015 (was 36)
+const ACCEL := 6.0 # m/s^2 toward the target speed when pointing downhill
+const SCRUB := 10.0 # m/s^2 speed bleed when carving across the slope
 const BOOST_MULT := 1.35
 const REVIVE_COST := 150
 const START_A := 8.0
@@ -390,7 +392,8 @@ func _update_world(spd: float) -> void:
 		cam.shift(shift)
 
 func _target_speed() -> float:
-	return min(MAX_SPEED, START_SPEED + 6.0 * (1.0 - exp(-run_time / 10.0)) + 0.05 * run_time)
+	# fast from the first second, then a long climb to the cap (~4 min)
+	return min(MAX_SPEED, START_SPEED + 8.0 * (1.0 - exp(-run_time / 10.0)) + 0.07 * run_time)
 
 func _play_step(delta: float) -> void:
 	run_time += delta
@@ -401,8 +404,12 @@ func _play_step(delta: float) -> void:
 	if tuck_t > 0.0:
 		tuck_t -= delta
 	speed_mod = move_toward(speed_mod, 1.0, 0.35 * delta)
-	var carve: float = abs(rider.steer) * 0.04 if rider.grounded else 0.0
-	speed = (_target_speed() + _slope_bonus + (3.0 if tuck_t > 0.0 else 0.0)) * speed_mod * (1.0 - carve)
+	# D-014: carving across the fall line bleeds speed (gravity only pulls along the fall line);
+	# pointing straight down lets it climb back. Speed is a state, not a direct curve.
+	var across: float = 1.0 - cos(rider.heading)
+	var want := (_target_speed() + _slope_bonus + (4.0 if tuck_t > 0.0 else 0.0)) * speed_mod * (1.0 - 0.45 * across)
+	if rider.grounded:
+		speed = move_toward(speed, want, (ACCEL if speed < want else SCRUB) * delta)
 	var eff := speed * (BOOST_MULT if boost_t > 0.0 else 1.0)
 	if auto_test:
 		autopilot.drive(self, delta)
@@ -411,7 +418,8 @@ func _play_step(delta: float) -> void:
 				int(score + trick_score), tricks_count, perfects, world.gen.ghost_failures, world.obstacles.size(), world.pickups.size(), world.pool.created])
 	else:
 		rider.steer = input.steer
-	var res := rider.step(delta, eff * delta, eff)
+	rider.steer_step(delta)
+	var res := rider.step(delta, eff * cos(rider.heading) * delta, eff)
 	_update_world(eff)
 	match res:
 		"fell":

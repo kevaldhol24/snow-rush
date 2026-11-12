@@ -19,17 +19,21 @@ func follow(r: Rider, tr: Track, speed: float, boost: bool, dead: bool, delta: f
 	# desired camera: behind (uphill) and above the rider, looking at a point down the slope
 	# framing: rider at ~70% screen height, horizon high (~20%) -> you look DOWN the fall line
 	var back := 7.6
-	var cam_u := r.u # full follow: at 0.75 the rider slid toward/off the narrow portrait edge
-	var behind_ground := tr.height(cam_u, r.a - back)
+	if dead:
+		back = 10.5
+	# swing partly behind the board's heading (D-014): you see where you're carving, but the
+	# fall line stays readable. Full lateral follow (at 0.75 the rider slid toward the edge).
+	var sw: float = r.heading * 0.4
+	var cam_u: float = r.u - back * sin(sw)
+	var cam_a: float = r.a - back * cos(sw)
+	var behind_ground := tr.height(cam_u, cam_a)
 	var rider_y := r.y
 	var cy: float = max(behind_ground, rider_y) + 3.7
 	if dead:
-		back = 10.5
 		cy += 2.5
-	var want_pos := tr.to_render(cam_u, r.a - back, cy)
+	var want_pos := tr.to_render(cam_u, cam_a, cy)
 	# look point: well ahead, a fixed amount below the rider -> stable pitch, rider sits low on screen
-	var ahead_a := r.a + 18.0
-	var want_look := tr.to_render(r.u, ahead_a, rider_y - 5.2)
+	var want_look := tr.to_render(r.u + 18.0 * sin(sw), r.a + 18.0 * cos(sw), rider_y - 5.2)
 	if not _init_done:
 		_pos = want_pos
 		_look = want_look
@@ -46,8 +50,8 @@ func follow(r: Rider, tr: Track, speed: float, boost: bool, dead: bool, delta: f
 	position = _pos + off
 	look_at(_look, Vector3.UP)
 	# lean into carves
-	rotate_object_local(Vector3.FORWARD, -r.vu * 0.006)
-	var target_fov: float = 64.0 + clamp((speed - 20.0) / 16.0, 0.0, 1.0) * 12.0 + (8.0 if boost else 0.0)
+	rotate_object_local(Vector3.FORWARD, clamp(-r.yaw_rate * 0.035, -0.06, 0.06))
+	var target_fov: float = 64.0 + clamp((speed - 26.0) / 24.0, 0.0, 1.0) * 12.0 + (8.0 if boost else 0.0)
 	fov = lerp(fov, target_fov, 1.0 - exp(-3.0 * delta))
 
 func menu_orbit(r: Rider, delta: float, shop_open: bool) -> void:

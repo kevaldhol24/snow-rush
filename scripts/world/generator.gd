@@ -103,7 +103,7 @@ func _pick() -> String:
 		"rocks": 0.6 + d * 0.4,
 		"logs": 0.4 + d * 0.3,
 		"steep": 0.5,
-		"flat": 0.35,
+		# "flat" removed (D-015): the run is always clearly downhill
 		"cliff": 0.0 if next_a < 250.0 else 0.75,
 		"crevasse": 0.0 if next_a < 400.0 else 0.5 + d * 0.4,
 		"river": 0.0 if next_a < 600.0 else 0.4,
@@ -140,6 +140,8 @@ func _make_section() -> void:
 			_extend_safe(a + len, 5.0)
 			_scatter(a, a + len, 0.035 + d * 0.03, {"pine": 0.7, "rock": 0.3})
 			_coins(a + 10, a + len - 10, 2)
+			if rng.randf() < 0.5: # power-ups used to live in the (removed) flat sections
+				powerups.append([a + len * 0.6, ["magnet", "boost", "x2"][rng.randi() % 3]])
 		"forest":
 			len = rng.randf_range(100, 140)
 			track.roll_target = 0.25
@@ -201,7 +203,7 @@ func _make_section() -> void:
 			_coins(a + 10, a + len - 10, 1)
 		"flat":
 			len = rng.randf_range(70, 90)
-			track.theta_target = deg_to_rad(12.0)
+			track.theta_target = deg_to_rad(18.0) # only reachable via --section; never a real flat (D-015)
 			track.roll_target = 0.5
 			_extend_safe(a + len, 5.0)
 			_scatter(a, a + len, 0.02, {"pine": 1.0})
@@ -273,7 +275,8 @@ func _blocked(u: float, a: float) -> bool:
 	return false
 
 func _scatter(a0: float, a1: float, per_m: float, mix: Dictionary) -> void:
-	var count := int((a1 - a0) * per_m)
+	# densities were tuned for a 24 m run; keep obstacles per square metre the same
+	var count := int((a1 - a0) * per_m * Track.HALF_W / 12.0)
 	var placed: Array = []
 	var tries := count * 6
 	while count > 0 and tries > 0:

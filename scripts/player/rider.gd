@@ -12,15 +12,21 @@ const GRAVITY := 27.0
 const STICK := 14.0 # extra downforce used only for the take-off test (keeps us glued over small bumps)
 const JUMP_V := 9.0
 const SLAM_V := -26.0
-const MAX_LAT := 8.5 # m/s lateral at full steer
-const LAT_ACC := 34.0
-const AIR_CONTROL := 0.12
+## Carve steering (D-014): the board has a heading relative to the fall line and you travel along it.
+## steer -1..1 sets the TARGET heading; the board arcs toward it at a turn rate limited like a real
+## carve (radius ~ v / rate). Let go -> it swings back down the fall line.
+const MAX_HEAD := deg_to_rad(62.0)
+const TURN_K := 6.5 # how eagerly the board chases the target heading (1/s)
+const TURN_RATE := 2.4 # max yaw rate on the ground (rad/s)
+const AIR_TURN := 0.25 # fraction of turn authority in the air
 
 var u := 0.0
 var a := 0.0
 var y := 0.0
 var vy := 0.0
-var vu := 0.0
+var vu := 0.0 # lateral speed, derived: speed * sin(heading)
+var heading := 0.0 # board/travel direction vs the fall line (rad, + = toward +u)
+var yaw_rate := 0.0
 var grounded := true
 var air_time := 0.0
 var crashed := false
@@ -156,6 +162,8 @@ func reset(t: Track, start_a: float) -> void:
 	y = track.height(u, a)
 	vy = 0.0
 	vu = 0.0
+	heading = 0.0
+	yaw_rate = 0.0
 	steer = 0.0
 	grounded = true
 	crashed = false
@@ -212,7 +220,7 @@ func time_to_land(speed: float = 25.0) -> float:
 		t += 0.04
 		v -= GRAVITY * 0.04
 		yy += v * 0.04
-		var g := track.ground(u + vu * t, a + speed * t)
+		var g := track.ground(u + vu * t, a + speed * cos(heading) * t)
 		if g > Track.OPEN * 0.5 and yy <= g:
 			return t
 	return 3.0
@@ -247,17 +255,25 @@ static func surface_step(st: Dictionary, tr: Track, dt: float) -> String:
 		return "fell"
 	return ""
 
-## Full step. da = forward distance moved this frame. Returns "", "landed", "bad_landing", "fell".
+## Turns the board; call before step(). Game uses `heading` to split speed into da / du.
+func steer_step(delta: float) -> void:
+	var target := steer * MAX_HEAD
+	var rate := TURN_RATE * handling * (1.0 if grounded else AIR_TURN)
+	var w: float = clamp((target - heading) * TURN_K, -rate, rate)
+	# at the side of the run the bank pushes the board back toward the middle
+	if abs(u) > Track.EDGE - 0.6 and sign(heading) == sign(u):
+		w = min(w, -heading * 6.0) if heading > 0.0 else max(w, -heading * 6.0)
+	heading = clamp(heading + w * delta, -MAX_HEAD, MAX_HEAD)
+	yaw_rate = w
+
+## Full step. da = distance moved down the fall line this frame, speed = speed along the board.
+## Returns "", "landed", "bad_landing", "fell".
 func step(delta: float, da: float, speed: float) -> String:
 	_clock += delta
-	# lateral carve
-	var ctl := 1.0 if grounded else AIR_CONTROL
-	var target := steer * MAX_LAT * handling * ctl
-	vu = move_toward(vu, target, LAT_ACC * delta * (1.0 if grounded else 0.3))
+	vu = speed * sin(heading)
 	u += vu * delta
 	if abs(u) > Track.EDGE:
 		u = sign(u) * Track.EDGE
-		vu = 0.0
 	a += da
 	var st := {"u": u, "a": a, "y": y, "vy": vy, "grounded": grounded, "air": air_time}
 	var res := surface_step(st, track, delta)
@@ -332,11 +348,12 @@ func _land() -> String:
 func _update_visual(delta: float, speed: float) -> void:
 	position = track.to_render(u, a, y)
 	# face along the path + carve direction
-	var carve_yaw := atan2(-vu, max(speed, 1.0)) * 1.7
-	_vis_yaw = lerp_angle(_vis_yaw, -track.heading(a) + carve_yaw, 1.0 - exp(-10.0 * delta))
+	# board/body point where we travel
+	_vis_yaw = lerp_angle(_vis_yaw, -track.heading(a) - heading, 1.0 - exp(-12.0 * delta))
 	yaw_node.rotation.y = _vis_yaw
-	# small inclination only (was up to ~30 deg: read as a motorbike lean, not a snow turn)
-	var target_roll: float = clamp(-vu * 0.02, -0.18, 0.18) if grounded else 0.0
+	# lean comes from the turn itself (centripetal accel v*w), not from sideways speed;
+	# damped so it reads as a carve, not a motorbike lean (Keval, 2026-11-12)
+	var target_roll: float = clamp(-atan(speed * yaw_rate / 9.8) * 0.45, -0.32, 0.32) if grounded else 0.0
 	var target_pitch := 0.0
 	if grounded:
 		var g0 := track.height(u, a - 0.8)
@@ -348,8 +365,10 @@ func _update_visual(delta: float, speed: float) -> void:
 	lean.rotation.x = lerp(lean.rotation.x, target_pitch, 1.0 - exp(-12.0 * delta))
 	spray.emitting = grounded and not crashed
 	spray.amount = 36
-	spray.initial_velocity_max = 5.0 + abs(vu) * 0.8
-	spray.direction = Vector3(-sign(vu) * min(abs(vu) * 0.15, 1.0), 0.6, 1)
+	# spray scales with how hard we carve (centripetal accel), thrown to the outside of the turn
+	var carve_k: float = clamp(abs(speed * yaw_rate) / 25.0, 0.0, 1.0)
+	spray.initial_velocity_max = 5.0 + carve_k * 9.0
+	spray.direction = Vector3(-sign(yaw_rate) * carve_k, 0.6, 1)
 	if _land_timer > 0.0:
 		_land_timer -= delta
 		if _land_timer <= 0.0:

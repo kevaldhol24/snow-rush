@@ -8,8 +8,8 @@ extends RefCounted
 ## Local terrain (banks, rollers, lips, crevasses, rivers) is added on top: height = -D(a) + local(u, a).
 ## Render coordinates = world coordinates minus a floating origin (see to_render / rebase).
 
-const HALF_W := 12.0 # playable half width of the run
-const EDGE := 13.5 # rider is clamped here (banks start at HALF_W)
+const HALF_W := 18.0 # playable half width of the run (was 12; carving needs room, D-014)
+const EDGE := 19.5 # rider is clamped here (banks start at HALF_W)
 const OPEN := -1.0e9 # ground value meaning "no ground here" (crevasse / open water)
 
 var i0 := 0 # absolute metre index of table element 0
