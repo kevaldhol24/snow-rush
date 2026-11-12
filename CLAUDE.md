@@ -21,6 +21,7 @@ Phase 1 is done and merged into `main`. **Phase 2 (look-dev)** happens on branch
 - **Log every task/session in `docs/DEVLOG.md`** (newest on top, use the template there): what, why, how, result/feedback, next. Add the entry in the same commit as the work (or right after), and include Keval's feedback when he gives it.
 - Keep the game runnable after every commit. Commit in small, descriptive steps. Push to `main` (CI builds the APK).
 - Every third-party asset → `docs/ASSETS.md` register (licence!). Raw packs in `assets/third_party/` (not exported).
-- Cloud sessions can only download from GitHub/npm/PyPI. Ask Keval to upload/commit anything else.
+- Cloud sessions can download from GitHub/npm/PyPI plus the hosts Keval has allowed (kenney.nl, quaternius.com, dl.google.com as of 2026-11-12; see `docs/ASSETS.md`). Test a host before relying on it; ask Keval to allow or upload anything else.
+- GitHub is linked (2026-11-12): push work branches; `main` only after Keval approves the build.
 - Verify with the headless autotest + xvfb screenshots before handing over (commands in `docs/TECH.md §4`).
 - Don't commit secrets. The `ci/debug.keystore` is a public test key only.
