@@ -2,6 +2,9 @@
 
 Snow Rush is a mobile (Android) endless downhill **free-carve snowboarding** game in **Godot 4.3**, for KDIT Labs (Keval Dhol).
 
+## ⚠️ Work in progress
+Phase 1 is in progress on branch **`phase-1-wip`** (not merged). Run `git checkout phase-1-wip` first, then read the top entry of `docs/DEVLOG.md` there: it lists exactly where we stopped and the next steps.
+
 ## Read before doing anything
 1. `docs/ROADMAP.md`: **Current status** + which phase/tasks are next. Update it as you work.
 2. `docs/DECISIONS.md`: what's decided and why. Don't silently reverse decisions; add a new entry instead.
