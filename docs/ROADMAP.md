@@ -3,10 +3,9 @@
 > **How to use:** work top to bottom. Each phase ends with a debug APK on Keval's phone (Oppo Reno 16c) and his **go / no-go**. Tick boxes as you go and update **Current status**. Never start the next phase without his go.
 
 ## Current status
-- **Phase:** 1 **built, waiting for Keval's go/no-go** on branch `phase-1-wip` (not merged to `main`). See the top entry of `DEVLOG.md`.
-- **Last build:** `SnowRush-v0.3.0-phase1-debug.apk` (versionCode 4, 2026-11-12): carve steering (D-014), always downhill, 26 → 50 m/s (D-015), 36 m run. Autotest 10 seeds: ghost_fail 0, no errors. Earlier today: v0.2.0 (first Phase 1 build), v0.2.1 (bumps, crashes, pass-through props).
-- **Previous build:** v0.1 prototype (commit `6a25503`, lane-based). Keval's feedback: likes jumps/flips/360; start too slow; doesn't feel downhill; ramps look artificial; looks not impressive.
-- **Waiting on Keval:** (1) playtest the Phase 1 APK on the Reno 16c → go/no-go; (2) download the asset packs listed in `ASSETS.md` → commit to `assets/third_party/` (needed by Phase 2).
+- **Phase:** 1 ✅ **done** (Keval's go, 2026-11-12; merged to `main`). **Next: Phase 2 (look-dev)** on branch `phase-2-wip`.
+- **Last build:** `SnowRush-v0.3.1-phase1-debug.apk` (versionCode 5): carve steering (D-014), constant downhill + 26 → 50 m/s (D-015), softened sensitivity. Autotest 10 seeds: ghost_fail 0.
+- **Waiting on Keval:** the asset packs in `ASSETS.md` (Quaternius Stylized Nature MegaKit + Universal Animation Library / a rigged body, Kenney Nature + Holiday kits, ambientCG snow/rock textures). The cloud session can't download them; commit to `assets/third_party/` or upload the zips in a session. Phase 2 starts with the parts that need no packs.
 
 ---
 
@@ -15,7 +14,7 @@
 - [x] Design discussion with Keval → decisions D-003 … D-013
 - [x] Docs: GDD, ART_DIRECTION, ASSETS, TECH, ROADMAP, DECISIONS, CLAUDE.md
 
-## Phase 1: Core feel (go/no-go for the whole direction)
+## Phase 1: Core feel (go/no-go for the whole direction) ✅
 Goal: it **feels** fast, downhill and free. Visuals can stay prototype-grade, but they must not be worse than v0.1.
 - [x] Restructure folders per `TECH.md §3` (core/player/world/fx/ui/dev); keep the game running after each step
 - [x] Slope space + world transform: tilted slope, floating origin, upright props, camera looking down the fall line
@@ -32,8 +31,9 @@ Goal: it **feels** fast, downhill and free. Visuals can stay prototype-grade, bu
 - [x] Autotest 10 seeds: no errors, median bot survival ≥ 1500 m (2026-11-12: ghost_fail 0, median ≈ 17.9 km)
 - [x] Feedback round 1 (v0.2.0): smoother surface (no bump hops), no accidental tricks / impossible late flips, camera follows sideways, board turns instead of bike-lean, pine hitbox = canopy, decor outside the rideable width, rocks not buried
 - [x] Carve steering (D-014): board heading up to ±62°, arcs, travel along the board, speed bleed; run widened to 36 m; flat sections removed (D-015)
-- [ ] Steering tune on device (turn rate, speed bleed, finger travel); readability at 180 km/h
-- [ ] APK → Keval (v0.2.0, v0.2.1, v0.3.0 sent 2026-11-12; awaiting go/no-go on v0.3.0). **Acceptance:** feels downhill + fast from the start; carving is comfortable one-handed; cliffs/lips feel natural; ≥ 55 FPS on Reno.
+- [x] Steering tune on device: sensitivity softened in v0.3.1 (finger travel, response curve, turn rate)
+- [ ] Readability at 180 km/h (re-check during Phase 2 with real props)
+- [x] APK → Keval (v0.2.0 … v0.3.1). **Go given 2026-11-12** ("it is good … let's now work on phase 2"). **Acceptance:** feels downhill + fast from the start; carving is comfortable one-handed; cliffs/lips feel natural; ≥ 55 FPS on Reno.
 
 ## Phase 2: Look-dev and visual overhaul
 Goal: store-screenshot quality (see `ART_DIRECTION.md`). Approval gates at each ★.

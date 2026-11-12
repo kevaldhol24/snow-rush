@@ -15,6 +15,15 @@ One entry per task or session, **newest at the top**. Append; never rewrite hist
 
 ---
 
+## 2026-11-12: Steering sensitivity + Phase 1 sign-off, merged to main
+**Phase:** 1 → **done** (Keval's go) · **Commits:** sensitivity commit + this docs/merge commit · **Build:** `SnowRush-v0.3.1-phase1-debug.apk` (versionCode 5, sent in chat)
+**Feedback (Keval, on v0.3.0):** "it is good but now it is a little bit uncontrollable, like too much sensitive. And let's now work on phase 2, looks and graphics." → treated as the Phase 1 go, with the sensitivity fix included.
+**What:** full lock needs more finger travel (0.36/0.27/0.20 of screen width, was 0.24/0.17/0.12); response curve `|x|^1.6`; max heading 62 → 55°; heading chase 6.5 → 4.0/s; max yaw rate 2.4 → 1.6 rad/s; camera heading swing 0.4 → 0.3, smoothed on its own (3/s).
+**Result:** autotest 10 seeds: ghost_fail 0, no errors, median ≈ 17.7 km (min 2.5 km on seed 3, max 60+ km).
+**Merge:** `phase-1-wip` merged into `main` locally (with Keval's `de811d0` pointer commit; CLAUDE.md note updated for Phase 2). Push is still blocked from the cloud session (GitHub not linked), so it ships as a git bundle with `main` + `phase-1-wip`.
+**Not done from Phase 1 (carried to Phase 2):** feature visuals still `queue_free` per feature; on-device FPS measurement.
+**Next:** Phase 2 look-dev. Asset packs are still not in the repo (Quaternius/Kenney sites are blocked from the cloud; only KayKit adventurers + Kenney starter kits are on GitHub). Start with what needs no packs: snow shader, carve trails, lighting/sky, particles.
+
 ## 2026-11-12: Carve steering (D-014), always downhill + faster (D-015)
 **Phase:** 1 (awaiting go/no-go) · **Commits:** `580643c` + this docs/build commit · **Build:** `SnowRush-v0.3.0-phase1-debug.apk` (versionCode 4, sent in chat)
 **Feedback (Keval, on v0.2.1):** "the steering is still not satisfying, not matching with how real skiing works." He shared a YouTube reference (`youtu.be/sPD1V024ziM`), but YouTube is not reachable from the cloud session, so I asked him for the file or the game name. Discussed options; he chose heading-based carving: "okay lets do that". Also: "make the way downhill only … long way for flat surface, I want to remove that, it should be like constant downhill", "increase initial speed and move the upper limit far more".
