@@ -610,22 +610,58 @@ static func cliff_band(track: Track, a0: float, a1: float, h: float) -> MeshInst
 		var bulge := rng.randf_range(0.5, 1.6) * (0.6 + h * 0.08)
 		var m1 := top.lerp(bot, 0.33) + fwd * bulge
 		var m2 := top.lerp(bot, 0.7) + fwd * bulge * rng.randf_range(0.6, 1.2)
-		var lip := top + fwd * 0.35 + Vector3.UP * 0.25
+		# jagged lip: some columns have rock breaking through the cornice
+		var rocky := rng.randf() < 0.45
+		var lip := top + fwd * rng.randf_range(0.2, 0.6) + Vector3.UP * (rng.randf_range(0.35, 0.8) if rocky else rng.randf_range(0.1, 0.3))
 		var cur := [lip, top, m1, m2, bot]
 		if not prev.is_empty():
 			var rc := ROCK if rng.randf() < 0.5 else ROCK_DARK
 			_quad2(st, prev[0], cur[0], cur[1], prev[1], SNOW)
-			_quad2(st, prev[0], cur[0], cur[2], prev[2], SNOW_SHADE)
+			_quad2(st, prev[0], cur[0], cur[2], prev[2], rc.lightened(0.05) if rocky else SNOW_SHADE)
 			_quad2(st, prev[2], cur[2], cur[3], prev[3], rc)
 			_quad2(st, prev[3], cur[3], cur[4], prev[4], rc.darkened(0.15))
 		prev = cur
 		u += rng.randf_range(1.6, 2.8)
+	# rocky buttresses standing ABOVE the edge, only outside the rideable width (rider is clamped at
+	# Track.EDGE), so the drop reads from the chase camera without visual-only rocks in the rider's path
+	for side in [-1.0, 1.0]:
+		var bu := Track.EDGE + 3.2 # crag radius <= 2.3*1.15 -> inner face stays outside the rider clamp
+		while bu < 42.0:
+			var uu: float = side * (bu + rng.randf_range(0.0, 1.2))
+			var base := track.to_render(uu, a0 + 0.6, track.height(uu, a0 + 0.6)) - origin
+			var foot := track.to_render(uu, a1 + 0.8, track.height(uu, a1 + 0.8) - 0.3) - origin
+			var tall: float = rng.randf_range(1.4, 3.2) + h * 0.12 + (bu - Track.EDGE) * 0.06
+			_crag(st, rng, base, foot, rng.randf_range(1.2, 2.0), tall)
+			bu += rng.randf_range(2.2, 3.6)
 	var mi := MeshInstance3D.new()
 	var m := _finish(st)
 	m.surface_set_material(0, mat("vc"))
 	mi.mesh = m
 	mi.position = origin
 	return mi
+
+## Jagged rock pillar from `foot` (below the edge) up to `tall` above `base`, with a snow cap.
+static func _crag(st: SurfaceTool, rng: RandomNumberGenerator, base: Vector3, foot: Vector3, r: float, tall: float) -> void:
+	var n := 5
+	var ring_lo := []
+	var ring_mid := []
+	var ring_top := []
+	var ph := rng.randf() * TAU
+	var top_c := base + Vector3.UP * tall
+	for i in n:
+		var ang := ph + TAU * i / n
+		var d := Vector3(cos(ang), 0, sin(ang))
+		var jr := r * rng.randf_range(0.8, 1.15)
+		ring_lo.append(Vector3(base.x, foot.y, base.z) + d * jr * 1.15)
+		ring_mid.append(base + Vector3.UP * tall * 0.55 + d * jr * 0.85)
+		ring_top.append(base + Vector3.UP * tall * rng.randf_range(0.82, 0.98) + d * jr * 0.45)
+	for i in n:
+		var j := (i + 1) % n
+		var rc := ROCK if i % 2 == 0 else ROCK_DARK
+		_quad2(st, ring_lo[i], ring_lo[j], ring_mid[j], ring_mid[i], rc.darkened(0.1))
+		_quad2(st, ring_mid[i], ring_mid[j], ring_top[j], ring_top[i], rc)
+		_tri(st, ring_top[i], ring_top[j], top_c, SNOW)
+		_tri(st, ring_top[i], top_c, ring_top[j], SNOW)
 
 ## Rocks under the downhill side of a lip.
 static func lip_rocks(track: Track, f: Dictionary) -> MeshInstance3D:
