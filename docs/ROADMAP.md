@@ -4,7 +4,7 @@
 
 ## Current status
 - **Phase:** 1 **built, waiting for Keval's go/no-go** on branch `phase-1-wip` (not merged to `main`). See the top entry of `DEVLOG.md`.
-- **Last build:** `SnowRush-v0.2.0-phase1-debug.apk` (versionCode 2, 2026-11-12, sent in chat). Autotest 10 seeds: ghost_fail 0, median bot distance ≈ 17.9 km.
+- **Last build:** `SnowRush-v0.2.1-phase1-debug.apk` (versionCode 3, 2026-11-12): fixes from Keval's first Phase 1 feedback (bumps, steering feel, no-obstacle crashes, pass-through props). Autotest 10 seeds: ghost_fail 0, no bad_landing deaths.
 - **Previous build:** v0.1 prototype (commit `6a25503`, lane-based). Keval's feedback: likes jumps/flips/360; start too slow; doesn't feel downhill; ramps look artificial; looks not impressive.
 - **Waiting on Keval:** (1) playtest the Phase 1 APK on the Reno 16c → go/no-go; (2) download the asset packs listed in `ASSETS.md` → commit to `assets/third_party/` (needed by Phase 2).
 
@@ -30,7 +30,9 @@ Goal: it **feels** fast, downhill and free. Visuals can stay prototype-grade, bu
 - [x] Dev: perf HUD (FPS, draw calls), updated autopilot, `--section=` forcing, screenshot tooling
 - [x] Settings: steering sensitivity (3 levels), quality Low/High (shadows on/off at least)
 - [x] Autotest 10 seeds: no errors, median bot survival ≥ 1500 m (2026-11-12: ghost_fail 0, median ≈ 17.9 km)
-- [ ] APK → Keval (v0.2.0-phase1 sent 2026-11-12, awaiting go/no-go). **Acceptance:** feels downhill + fast from the start; carving is comfortable one-handed; cliffs/lips feel natural; ≥ 55 FPS on Reno.
+- [x] Feedback round 1 (v0.2.0): smoother surface (no bump hops), no accidental tricks / impossible late flips, camera follows sideways, board turns instead of bike-lean, pine hitbox = canopy, decor outside the rideable width, rocks not buried
+- [ ] Steering feel re-check on device. If still off, discuss: fixed finger anchor vs moving anchor; real carve angle (cut across the slope) vs sideways slide
+- [ ] APK → Keval (v0.2.0 sent; v0.2.1 sent 2026-11-12 with round-1 fixes, awaiting go/no-go). **Acceptance:** feels downhill + fast from the start; carving is comfortable one-handed; cliffs/lips feel natural; ≥ 55 FPS on Reno.
 
 ## Phase 2: Look-dev and visual overhaul
 Goal: store-screenshot quality (see `ART_DIRECTION.md`). Approval gates at each ★.
@@ -39,6 +41,7 @@ Goal: store-screenshot quality (see `ART_DIRECTION.md`). Approval gates at each 
 - [ ] **Board carve trails** (ribbon) + landing decals
 - [ ] `prop.gdshader`: snow cap by normal, wind sway, rim, fog
 - [ ] Trees (3–4 pines + dead + birch), rocks, cliff bands and lips from packs; tree LOD/impostors
+- [ ] **Obstacle readability** (Keval, 2026-11-12): every colliding obstacle must be clearly visible at 30+ m (rocks: snow caps + contrast; no prop half-buried). Every visible prop is either colliding or clearly outside the run (no pass-through)
 - [ ] Sky shader (gradient, sun, clouds), layered mountain silhouettes, height fog
 - [ ] Biome system + 2 biomes fully dressed (Pine Forest morning, Frozen Lakes golden hour) ★
 - [ ] Particles: powder spray (lit), landing burst, falling snow layers, speed lines, coin sparkle, tree puff, crash burst

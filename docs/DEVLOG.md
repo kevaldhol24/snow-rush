@@ -15,6 +15,23 @@ One entry per task or session, **newest at the top**. Append; never rewrite hist
 
 ---
 
+## 2026-11-12: Phase 1 feedback round 1: bumps, steering feel, no-obstacle crashes, pass-through props
+**Phase:** 1 (awaiting go/no-go) · **Commits:** `35e4e9d`, `8ed0ae1`, `25efb0e` + this docs/build commit · **Build:** `SnowRush-v0.2.1-phase1-debug.apk` (versionCode 3, sent in chat)
+**Feedback (Keval, on v0.2.0-phase1):** "the surface has too many bumps, not feeling good." "Touch input works but the way it reacts feels a little off." "Sometimes it crashes without obstacles, maybe because of bumps." On steering: "the player tilts, which is not the correct way to steer on snow"; "when the player is on the far sides the camera stays in the center, feels off." Also: "some rocks are hiding under snow, impossible to spot, and trees and some rocks are transparent, the player goes through. Keep this in the plan so we don't miss it."
+**What / why / how:**
+- **Bumps (measured):** new `scenes/dev/bump_probe.tscn` rides feature-free terrain at 22/30/36 m/s. Before: **26 hops/km at 30 m/s, 52/km at 36 m/s** (0.25 s each), RMS vertical accel 74–140 m/s². The 8.5 m roller wave and ~12 m-wavelength noise exceeded gravity + stick at speed. Fix: rollers 48 m + 27 m swells; noise 0.18 → 0.04 on the run (rough only near the banks). After: **~0 hops/km**, RMS 7–17 m/s².
+- **No-obstacle crashes (root cause):** in the air, flick-up always started a backflip, even 0.1 s before touchdown. Landing with > 35% of the flip left = `bad_landing`. Bump hops + accidental up-flicks while steering = random crashes. Fix: flips need ≥ 0.34 s to touchdown (worst case "sketchy"), otherwise the flick is ignored.
+- **Accidental gestures:** a vertical flick now needs 70 px (was 55) and a 1.8:1 ratio (was 1.4). Sideways (spin) flicks only count within 0.3 s of touch-down, so steering corrections never trigger a 360.
+- **Rider tilt:** max roll ~30° → ~10°; the board/body yaws toward the direction of travel instead (1.4× → 1.7×). The proper sideways stance and poses stay in Phase 2 (D-011).
+- **Camera:** lateral follow 0.75 → 1.0. With the narrow portrait view (±19° horizontal), at u = 12 the rider was ~21° off-axis, i.e. at or past the screen edge.
+- **Pass-through trees:** pine hitbox 0.65 → 1.15 m (canopy ~1.8–2.6 m). Still clear of the safe line (SAFE_CLEAR 2.6 m).
+- **Pass-through decor:** non-colliding scatter (pines from u = 13.8, rocks from **12.5**, poles at 12.6) overlapped the rider clamp (13.5). Now everything starts at `EDGE + radius`.
+- **Buried rocks:** rocks/boulders are flat-bottomed and centred on the ground point, so the uphill side buried them. Now they sit on the highest ground under the footprint, are taller (y 0.9 → 1.25) and have hit height 0.85 → 1.05.
+
+**Result:** 10-seed autotest: ghost_fail 0 on all, no script errors, **0 bad_landing deaths** (2 before). 5 bots alive at the 240 s cap (37+ km), shortest run 3.9 km (pine). Screenshots (rocks, forest) sent: smoother snow, rider centred, subtle lean, rocks standing proud.
+**Still open / planned (added to ROADMAP):** rock readability at distance (small dark shapes; real rock models with snow caps in Phase 2); Keval to re-test whether steering still feels off. If it does, next candidates: the moving finger anchor (finger center shifts after an overshoot), and a "slides sideways rather than carves" feel (max lateral 8.5 m/s ≈ 16° across the slope). Both need discussion before changing.
+**Next:** Keval tests v0.2.1 → go/no-go.
+
 ## 2026-11-12: Phase 1: downhill look, camera, cliff edge, 10-seed autotest, first Phase 1 APK
 **Phase:** 1 (awaiting Keval's go/no-go) · **Commits:** `f466684`, `eb16e86`, `574159a` + this docs/build commit · **Build:** `SnowRush-v0.2.0-phase1-debug.apk` (versionCode 2, sent in chat; installs over v0.1)
 **What:**
