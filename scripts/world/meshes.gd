@@ -500,30 +500,88 @@ static func board(b: Dictionary) -> ArrayMesh:
 	return m
 
 ## Distant mountain range ring (not curved, follows camera).
+## Camera-relative backdrop (Y is relative to the camera). Sells "downhill": a hazy valley floor far
+## BELOW the rider, with two broad mountain ranges rising out of it to around eye level.
+## The slope's far edge (fog_end) sits just in front of the valley band.
+const VALLEY_Y := -150.0
+
+static func _tri_c(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, ca: Color, cb: Color, cc: Color) -> void:
+	st.set_color(ca); st.add_vertex(a)
+	st.set_color(cc); st.add_vertex(c)
+	st.set_color(cb); st.add_vertex(b)
+
+static func _ridge(rng: RandomNumberGenerator, segs: int, lo: float, hi: float) -> Array:
+	# smooth-ish ridgeline: a few sines + jagged noise, periodic around the ring
+	var ph := [rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU]
+	var out := []
+	for i in segs:
+		var t := TAU * i / segs
+		var v := 0.5 + 0.28 * sin(t * 3.0 + ph[0]) + 0.16 * sin(t * 7.0 + ph[1]) + 0.08 * sin(t * 17.0 + ph[2])
+		v += rng.randf_range(-0.06, 0.06)
+		out.append(lerp(lo, hi, clamp(v, 0.0, 1.0)))
+	return out
+
 static func mountains() -> ArrayMesh:
-	var st := _begin()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 42
-	var segs := 64
-	var r := 650.0
-	var peaks := []
-	for i in segs:
-		peaks.append(rng.randf_range(200, 330) * (1.0 if i % 3 != 0 else 1.25))
-	for i in segs:
-		var j := (i + 1) % segs
-		var a0 := TAU * i / segs
-		var a1 := TAU * j / segs
-		var am := (a0 + a1) * 0.5 if j != 0 else (a0 + TAU) * 0.5
-		var b0 := Vector3(cos(a0) * r, -60, sin(a0) * r)
-		var b1 := Vector3(cos(a1) * r, -60, sin(a1) * r)
-		var pk := Vector3(cos(am) * r * 0.98, peaks[i], sin(am) * r * 0.98)
-		var mid0 := b0.lerp(pk, 0.62)
-		var mid1 := b1.lerp(pk, 0.62)
-		var rock_c := Color(0.55, 0.62, 0.78)
-		_quad(st, b0, b1, mid1, mid0, rock_c if i % 2 == 0 else rock_c.darkened(0.08))
-		_tri(st, mid0, mid1, pk, Color(0.93, 0.96, 1.0) if i % 2 == 0 else Color(0.84, 0.9, 1.0))
-	var m := _finish(st)
-	# faces point inward toward camera
+	var segs := 160
+	var haze := Color(0.66, 0.76, 0.90)
+	# 1) valley floor: annulus far below, hazy blue with darker forest patches toward the near side
+	var rings := [250.0, 400.0, 550.0, 700.0, 880.0]
+	for ri in rings.size() - 1:
+		for i in segs:
+			var a0 := TAU * i / segs
+			var a1 := TAU * (i + 1) / segs
+			var r0: float = rings[ri]
+			var r1: float = rings[ri + 1]
+			var p00 := Vector3(cos(a0) * r0, VALLEY_Y, sin(a0) * r0)
+			var p01 := Vector3(cos(a1) * r0, VALLEY_Y, sin(a1) * r0)
+			var p10 := Vector3(cos(a0) * r1, VALLEY_Y, sin(a0) * r1)
+			var p11 := Vector3(cos(a1) * r1, VALLEY_Y, sin(a1) * r1)
+			var k0 := float(ri) / (rings.size() - 1)
+			var k1 := float(ri + 1) / (rings.size() - 1)
+			var forest := 0.5 + 0.5 * sin(a0 * 11.0 + ri * 1.7) * sin(a0 * 5.0 - ri)
+			var near_c := Color(0.30, 0.42, 0.52).lerp(Color(0.58, 0.67, 0.80), forest * 0.55)
+			var c0 := near_c.lerp(haze, k0)
+			var c1 := near_c.lerp(haze, k1)
+			_tri_c(st, p00, p01, p11, c0, c0, c1)
+			_tri_c(st, p00, p11, p10, c0, c1, c1)
+	# 2) two mountain ranges standing in the valley; nearer = lower + more contrast, far = taller + paler
+	var layers := [
+		{"r": 860.0, "lo": 60.0, "hi": 165.0, "rock": Color(0.60, 0.68, 0.84), "snow": Color(0.90, 0.94, 1.0)},
+		{"r": 700.0, "lo": 22.0, "hi": 95.0, "rock": Color(0.47, 0.56, 0.74), "snow": Color(0.86, 0.91, 0.99)},
+	]
+	for L in layers:
+		var r: float = L["r"]
+		var ridge := _ridge(rng, segs, L["lo"], L["hi"])
+		var rock: Color = L["rock"]
+		var snow: Color = L["snow"]
+		for i in segs:
+			var j := (i + 1) % segs
+			var a0 := TAU * i / segs
+			var a1 := TAU * (i + 1) / segs
+			var d0 := Vector3(cos(a0), 0, sin(a0))
+			var d1 := Vector3(cos(a1), 0, sin(a1))
+			var h0: float = ridge[i]
+			var h1: float = ridge[j]
+			# rows: base (in haze) -> snowline -> ridge
+			var b0 := d0 * r + Vector3(0, VALLEY_Y, 0)
+			var b1 := d1 * r + Vector3(0, VALLEY_Y, 0)
+			var s0 := d0 * r + Vector3(0, VALLEY_Y + h0 * 0.55, 0)
+			var s1 := d1 * r + Vector3(0, VALLEY_Y + h1 * 0.55, 0)
+			var t0 := d0 * r * 0.995 + Vector3(0, VALLEY_Y + h0, 0)
+			var t1 := d1 * r * 0.995 + Vector3(0, VALLEY_Y + h1, 0)
+			var streak := 0.08 if i % 2 == 0 else 0.0
+			var cb := haze
+			var cs := rock.darkened(streak)
+			var ct := snow.darkened(streak * 0.5)
+			_tri_c(st, b0, b1, s1, cb, cb, cs)
+			_tri_c(st, b0, s1, s0, cb, cs, cs)
+			_tri_c(st, s0, s1, t1, cs.lerp(ct, 0.6), cs.lerp(ct, 0.6), ct)
+			_tri_c(st, s0, t1, t0, cs.lerp(ct, 0.6), ct, ct)
+	var m := st.commit()
 	var mt := StandardMaterial3D.new()
 	mt.vertex_color_use_as_albedo = true
 	mt.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED

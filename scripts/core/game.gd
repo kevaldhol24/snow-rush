@@ -111,8 +111,8 @@ func _setup_environment() -> void:
 	var sm := ProceduralSkyMaterial.new()
 	sm.sky_top_color = Color(0.25, 0.50, 0.88)
 	sm.sky_horizon_color = Color(0.80, 0.88, 0.97)
-	sm.ground_bottom_color = Color(0.80, 0.88, 0.97)
-	sm.ground_horizon_color = Color(0.80, 0.88, 0.97)
+	sm.ground_bottom_color = Color(0.50, 0.60, 0.75) # below the horizon = hazy valley, never snow-white
+	sm.ground_horizon_color = Color(0.70, 0.79, 0.92)
 	sm.sun_angle_max = 20.0
 	sm.sky_curve = 0.12
 	sky.sky_material = sm
@@ -538,7 +538,7 @@ func _autotest_report(reason: String) -> void:
 
 # ------------------------------------------------------------------ visuals
 func _update_fx(delta: float) -> void:
-	mountains.position = Vector3(cam.position.x, cam.position.y - 260.0, cam.position.z)
+	mountains.position = cam.position # backdrop is baked camera-relative (Meshes.VALLEY_Y)
 	snowfall.gravity = Vector3(0, -1.0, 0) + cam.global_transform.basis.z * (speed * 0.6 if state == State.PLAY else 1.0)
 	rider.trail.emitting = boost_t > 0.0 and state == State.PLAY
 	var target_db := -34.0

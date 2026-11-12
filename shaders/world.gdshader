@@ -49,6 +49,10 @@ void fragment() {
 		// soft wind-blown patches so the snow is not one flat colour
 		float n = vnoise(UV * vec2(0.15, 0.1)) * 0.6 + vnoise(UV * vec2(0.6, 0.4)) * 0.4;
 		col *= mix(vec3(0.80, 0.86, 0.98), vec3(1.0), smoothstep(0.2, 0.8, n));
+		// faint wind/groomer streaks along the fall line (UV = lateral m, along-path m):
+		// converging lines give the eye a perspective cue for the slope's direction and pitch
+		float streak = vnoise(vec2(UV.x * 1.3, UV.y * 0.035)) * 0.65 + vnoise(vec2(UV.x * 3.1, UV.y * 0.08)) * 0.35;
+		col *= mix(1.0, 0.93, smoothstep(0.55, 0.85, streak));
 	}
 	float dist = length(VERTEX);
 	float f = smoothstep(fog_start, fog_end, dist);
