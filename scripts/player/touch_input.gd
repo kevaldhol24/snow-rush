@@ -9,7 +9,8 @@ signal flick(dir: String) # "up", "down", "left", "right"
 const FLICK_WINDOW := 0.13 # seconds
 const FLICK_MIN_PX := 70.0
 const FRESH_TOUCH := 0.3 # sideways flicks (spins) only from a new touch, never mid-steer
-const SENS_RANGE := [0.24, 0.17, 0.12] # fraction of screen width for full lock (low/med/high sensitivity)
+const SENS_RANGE := [0.36, 0.27, 0.20] # fraction of screen width for full lock (low/med/high); was 0.24/0.17/0.12
+const CURVE := 1.6 # response curve: fine control near the centre, full lock still reachable
 
 var steer := 0.0
 var enabled := true
@@ -52,7 +53,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_anchor = event.position.x - range_px
 		elif dx < -range_px:
 			_anchor = event.position.x + range_px
-		steer = clamp((event.position.x - _anchor) / range_px, -1.0, 1.0)
+		var lin: float = clamp((event.position.x - _anchor) / range_px, -1.0, 1.0)
+		steer = sign(lin) * pow(abs(lin), CURVE)
 		var t := _now()
 		_samples.append([t, event.position])
 		while _samples.size() > 2 and t - _samples[0][0] > FLICK_WINDOW:

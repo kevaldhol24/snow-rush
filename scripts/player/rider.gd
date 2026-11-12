@@ -15,9 +15,9 @@ const SLAM_V := -26.0
 ## Carve steering (D-014): the board has a heading relative to the fall line and you travel along it.
 ## steer -1..1 sets the TARGET heading; the board arcs toward it at a turn rate limited like a real
 ## carve (radius ~ v / rate). Let go -> it swings back down the fall line.
-const MAX_HEAD := deg_to_rad(62.0)
-const TURN_K := 6.5 # how eagerly the board chases the target heading (1/s)
-const TURN_RATE := 2.4 # max yaw rate on the ground (rad/s)
+const MAX_HEAD := deg_to_rad(55.0)
+const TURN_K := 4.0 # how eagerly the board chases the target heading (1/s); 6.5 was twitchy
+const TURN_RATE := 1.6 # max yaw rate on the ground (rad/s); 2.4 was twitchy
 const AIR_TURN := 0.25 # fraction of turn authority in the air
 
 var u := 0.0

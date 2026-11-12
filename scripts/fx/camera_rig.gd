@@ -5,6 +5,7 @@ extends Camera3D
 var _pos := Vector3.ZERO
 var _look := Vector3.ZERO
 var _init_done := false
+var _sw := 0.0 # smoothed heading swing
 var shake := 0.0
 var menu_t := 0.0
 
@@ -14,6 +15,7 @@ func shift(v: Vector3) -> void:
 
 func snap() -> void:
 	_init_done = false
+	_sw = 0.0
 
 func follow(r: Rider, tr: Track, speed: float, boost: bool, dead: bool, delta: float) -> void:
 	# desired camera: behind (uphill) and above the rider, looking at a point down the slope
@@ -23,7 +25,8 @@ func follow(r: Rider, tr: Track, speed: float, boost: bool, dead: bool, delta: f
 		back = 10.5
 	# swing partly behind the board's heading (D-014): you see where you're carving, but the
 	# fall line stays readable. Full lateral follow (at 0.75 the rider slid toward the edge).
-	var sw: float = r.heading * 0.4
+	_sw = lerp(_sw, r.heading * 0.3, 1.0 - exp(-3.0 * delta)) # slow, so it does not jerk with every input
+	var sw: float = _sw
 	var cam_u: float = r.u - back * sin(sw)
 	var cam_a: float = r.a - back * cos(sw)
 	var behind_ground := tr.height(cam_u, cam_a)
