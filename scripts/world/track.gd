@@ -125,13 +125,17 @@ func slope_at(a: float) -> float:
 
 func rollers(a: float) -> float:
 	var amp := _lerp_tab(roll, a)
-	return amp * (sin(a * TAU / 21.0) + 0.35 * sin(a * TAU / 8.5 + 1.3))
+	# long, gentle swells only. (Was 21 m + 8.5 m waves: at 30-36 m/s that threw the rider into a
+	# 0.25 s hop every 0.5-1.3 s. Measure with scenes/dev/bump_probe.tscn.)
+	return amp * (sin(a * TAU / 48.0) + 0.3 * sin(a * TAU / 27.0 + 1.3))
 
 ## Local terrain height relative to the nominal slope (no opening checks).
 func local(u: float, a: float) -> float:
 	var au: float = abs(u)
 	var edge_fade: float = 1.0 - smoothstep(HALF_W - 3.0, HALF_W + 4.0, au) * 0.6
-	var h := rollers(a) * edge_fade + noise.get_noise_2d(u, a) * 0.18
+	# surface noise: barely there on the run, rougher toward the banks
+	var rough: float = lerp(0.04, 0.18, smoothstep(HALF_W - 4.0, HALF_W + 2.0, au))
+	var h := rollers(a) * edge_fade + noise.get_noise_2d(u, a * 0.5) * rough
 	var e: float = au - HALF_W
 	if e > 0.0:
 		h += min(e * 0.25, 2.5) + (hills.get_noise_2d(u, a) * 0.5 + 0.5) * smoothstep(0.0, 40.0, e) * 6.0
