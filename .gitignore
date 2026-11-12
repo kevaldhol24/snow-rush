@@ -1,0 +1,5 @@
+.godot/
+build/
+export_credentials.cfg
+*.keystore
+!ci/debug.keystore
