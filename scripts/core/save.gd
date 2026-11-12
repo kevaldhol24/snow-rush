@@ -31,6 +31,8 @@ var equipped := "plank"
 var levels := {"magnet": 0, "boost": 0, "x2": 0}
 var total_runs := 0
 var sound_on := true
+# sens: 0 low,1 med,2 high steering sensitivity; quality: 0 low,1 high; fps: show perf overlay
+var settings := {"sens": 1, "quality": 1, "fps": false}
 
 func _ready() -> void:
 	load_data()
@@ -48,6 +50,10 @@ func load_data() -> void:
 		levels[k] = int(lv.get(k, 0))
 	total_runs = cf.get_value("p", "runs", 0)
 	sound_on = cf.get_value("p", "sound", true)
+	var st: Dictionary = cf.get_value("p", "settings", {})
+	for k in settings.keys():
+		if st.has(k):
+			settings[k] = st[k]
 
 func save_data() -> void:
 	var cf := ConfigFile.new()
@@ -58,6 +64,8 @@ func save_data() -> void:
 	cf.set_value("p", "levels", levels)
 	cf.set_value("p", "runs", total_runs)
 	cf.set_value("p", "sound", sound_on)
+	cf.set_value("p", "settings", settings)
+	cf.set_value("p", "version", 2)
 	cf.save(PATH)
 
 func board() -> Dictionary:

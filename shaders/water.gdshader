@@ -2,8 +2,6 @@
 shader_type spatial;
 render_mode world_vertex_coords, diffuse_lambert, specular_schlick_ggx;
 
-global uniform float curve_y;
-global uniform float curve_x;
 global uniform vec4 fog_color : source_color;
 global uniform float fog_start;
 global uniform float fog_end;
@@ -15,9 +13,6 @@ varying vec3 v_local;
 
 void vertex() {
 	v_local = (inverse(MODEL_MATRIX) * vec4(VERTEX, 1.0)).xyz;
-	float d = max(-VERTEX.z, 0.0);
-	VERTEX.y -= d * d * curve_y;
-	VERTEX.x += d * d * curve_x;
 	v_world = VERTEX;
 }
 

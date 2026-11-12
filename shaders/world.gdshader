@@ -1,11 +1,8 @@
-// Curved-world shader used by every scrolling object (terrain, obstacles, coins).
-// Bends geometry down + sideways with distance ahead of the player (Subway Surfers style)
-// and applies a cheap distance fog that works on the Compatibility renderer.
+// Shared shader for terrain + props: vertex-coloured, distance fog (Compatibility-safe), snow glitter, rim.
+// Phase 2 replaces this with dedicated snow/prop shaders (see docs/ART_DIRECTION.md).
 shader_type spatial;
 render_mode world_vertex_coords, diffuse_lambert, specular_schlick_ggx;
 
-global uniform float curve_y;
-global uniform float curve_x;
 global uniform vec4 fog_color : source_color;
 global uniform float fog_start;
 global uniform float fog_end;
@@ -18,14 +15,11 @@ uniform float roughness : hint_range(0.0, 1.0) = 0.9;
 uniform float metallic : hint_range(0.0, 1.0) = 0.0;
 uniform float rim_strength = 0.0;
 uniform float sparkle = 0.0; // snow glitter
-uniform bool track = false; // groomed piste pattern (terrain only)
+uniform bool terrain = false; // subtle large-scale snow tint variation
 
 varying vec3 v_world;
 
 void vertex() {
-	float d = max(-VERTEX.z, 0.0);
-	VERTEX.y -= d * d * curve_y;
-	VERTEX.x += d * d * curve_x;
 	v_world = VERTEX;
 }
 
@@ -35,36 +29,39 @@ float hash(vec3 p) {
 	return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
 }
 
+float vnoise(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	float a = hash(vec3(i, 0.0));
+	float b = hash(vec3(i + vec2(1.0, 0.0), 0.0));
+	float c = hash(vec3(i + vec2(0.0, 1.0), 0.0));
+	float d = hash(vec3(i + vec2(1.0, 1.0), 0.0));
+	return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
 void fragment() {
 	vec3 col = albedo.rgb;
 	if (use_vertex_color) {
 		col *= COLOR.rgb;
 	}
-	if (track) {
-		float x = UV.x;
-		float a = UV.y;
-		float ax = abs(x);
-		float on = 1.0 - smoothstep(5.2, 5.8, ax);
-		// corduroy grooves along travel direction
-		float cord = smoothstep(0.35, 0.5, abs(fract(x * 3.0) - 0.5));
-		// lane separators
-		float lane = 1.0 - smoothstep(0.03, 0.1, abs(abs(x) - 1.3)) ;
-		// cross bands for speed feeling
-		float band = smoothstep(0.85, 1.0, sin(a * 0.45)) ;
-		vec3 piste = vec3(0.80, 0.87, 0.97);
-		piste *= 1.0 - cord * 0.10;
-		piste = mix(piste, vec3(0.52, 0.66, 0.92), lane * 0.75);
-		piste = mix(piste, vec3(0.68, 0.78, 0.95), band * 0.6);
-		// soft edge berm
-		piste = mix(piste, vec3(0.70, 0.80, 0.96), smoothstep(4.0, 5.5, ax) * 0.7);
-		col = mix(col, piste * COLOR.rgb / max(COLOR.rgb, vec3(0.6)), on);
+	if (terrain) {
+		// soft wind-blown patches so the snow is not one flat colour
+		float n = vnoise(UV * vec2(0.15, 0.1)) * 0.6 + vnoise(UV * vec2(0.6, 0.4)) * 0.4;
+		col *= mix(vec3(0.80, 0.86, 0.98), vec3(1.0), smoothstep(0.2, 0.8, n));
+		// faint wind/groomer streaks along the fall line (UV = lateral m, along-path m):
+		// converging lines give the eye a perspective cue for the slope's direction and pitch
+		float streak = vnoise(vec2(UV.x * 1.3, UV.y * 0.035)) * 0.65 + vnoise(vec2(UV.x * 3.1, UV.y * 0.08)) * 0.35;
+		col *= mix(1.0, 0.93, smoothstep(0.55, 0.85, streak));
 	}
 	float dist = length(VERTEX);
 	float f = smoothstep(fog_start, fog_end, dist);
 	vec3 em = emission * emission_energy;
 	if (sparkle > 0.0) {
-		float s = step(0.985, hash(floor(v_world * 9.0)));
-		em += vec3(s * sparkle) * (1.0 - f);
+		vec3 cell = floor(v_world * 7.0);
+		float s = step(0.992, hash(cell));
+		float facing = pow(clamp(dot(NORMAL, VIEW), 0.0, 1.0), 2.0);
+		em += vec3(s * sparkle * facing) * (1.0 - smoothstep(0.0, 45.0, dist));
 	}
 	if (rim_strength > 0.0) {
 		float r = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);

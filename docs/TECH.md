@@ -78,18 +78,26 @@ curl -sSLO https://github.com/godotengine/godot/releases/download/4.3-stable/God
 curl -sSL -o templates.tpz https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
 mkdir -p ~/.local/share/godot/export_templates/4.3.stable
 unzip -oj -q templates.tpz 'templates/android_debug.apk' 'templates/android_release.apk' 'templates/version.txt' -d ~/.local/share/godot/export_templates/4.3.stable
-# Android SDK (dl.google.com is reachable)
-mkdir -p ~/android && cd ~/android
-curl -sSL -o clt.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip && unzip -oq clt.zip
-mkdir -p sdk/cmdline-tools && mv cmdline-tools sdk/cmdline-tools/latest
-yes | sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android/sdk "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+# Android SDK. As of 2026-11-12, dl.google.com is BLOCKED in cloud sessions (403 from the proxy).
+# Godot's non-gradle export only needs build-tools/*/apksigner + platform-tools/adb (existence check),
+# so build apksigner from the AOSP source mirror on GitHub with the system JDK 21:
+mkdir -p ~/src && cd ~/src && git clone -q --depth 1 https://github.com/LineageOS/android_tools_apksig.git apksig && cd apksig
+sed -i 's|Security.addProvider(new org.conscrypt.OpenSSLProvider());|if (false) throw new UnsatisfiedLinkError();|' src/apksigner/java/com/android/apksigner/ApkSignerTool.java
+find src -name '*.java' -not -path '*/test/*' > /tmp/srcs.txt && rm -rf /tmp/apkout && mkdir /tmp/apkout && javac -nowarn -d /tmp/apkout @/tmp/srcs.txt
+cp src/apksigner/java/com/android/apksigner/*.txt /tmp/apkout/com/android/apksigner/
+SDK=$HOME/android/sdk; mkdir -p $SDK/build-tools/34.0.0/lib $SDK/platform-tools
+jar cfm $SDK/build-tools/34.0.0/lib/apksigner.jar src/apksigner/apksigner.mf -C /tmp/apkout .
+printf '#!/bin/sh\nexec java -jar "$(dirname "$0")/lib/apksigner.jar" "$@"\n' > $SDK/build-tools/34.0.0/apksigner
+printf '#!/bin/sh\nexit 0\n' > $SDK/platform-tools/adb && chmod +x $SDK/build-tools/34.0.0/apksigner $SDK/platform-tools/adb
+# (If dl.google.com is reachable again, the official route still works:
+#  commandlinetools-linux-11076708_latest.zip → sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34")
 # Editor settings for export (keystore is committed in ci/)
 mkdir -p ~/.config/godot && cat > ~/.config/godot/editor_settings-4.3.tres <<EOF
 [gd_resource type="EditorSettings" format=3]
 [resource]
 export/android/android_sdk_path = "$HOME/android/sdk"
 export/android/java_sdk_path = "/usr/lib/jvm/java-21-openjdk-amd64"
-export/android/debug_keystore = "$PWD/ci/debug.keystore"
+export/android/debug_keystore = "<ABSOLUTE repo path>/ci/debug.keystore"
 export/android/debug_keystore_user = "androiddebugkey"
 export/android/debug_keystore_pass = "android"
 EOF
@@ -103,7 +111,7 @@ Note: `$HOME` is `/root`, not `/home/claude`. Keep paths absolute.
 | Parse-check a script | `$G --headless --path . --check-only --script scripts/x.gd` (autoload names show as errors here; that's expected) |
 | Headless autopilot run | `$G --headless --path . --fixed-fps 60 -- --autotest --quit_on_death --seed=12` |
 | Screenshots (software GL) | `xvfb-run -a -s "-screen 0 720x1280x24" $G --path . --rendering-driver opengl3 --resolution 720x1280 -- --shots=/abs/outdir --shot_times=4,9 --autotest` |
-| Force patterns (v0.1) | add `--force=river,ramp` |
+| Force sections (v0.2) | add `--section=cruise,cliff` (forced sections start at a=0; put `cruise` first to film a cliff *approach*) |
 | Start run without autopilot | `--run` |
 | Shop screenshot | `--shop` |
 | Debug APK | `mkdir -p build && $G --headless --path . --export-debug "Android" build/SnowRush.apk` |

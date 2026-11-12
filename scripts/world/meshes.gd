@@ -24,8 +24,8 @@ static func mat(key: String = "vc") -> ShaderMaterial:
 		"vc":
 			pass
 		"snow":
-			m.set_shader_parameter("sparkle", 0.9)
-			m.set_shader_parameter("track", true)
+			m.set_shader_parameter("sparkle", 1.2)
+			m.set_shader_parameter("terrain", true)
 		"coin":
 			m.set_shader_parameter("emission", Color(1.0, 0.75, 0.15))
 			m.set_shader_parameter("emission_energy", 0.45)
@@ -500,30 +500,88 @@ static func board(b: Dictionary) -> ArrayMesh:
 	return m
 
 ## Distant mountain range ring (not curved, follows camera).
+## Camera-relative backdrop (Y is relative to the camera). Sells "downhill": a hazy valley floor far
+## BELOW the rider, with two broad mountain ranges rising out of it to around eye level.
+## The slope's far edge (fog_end) sits just in front of the valley band.
+const VALLEY_Y := -150.0
+
+static func _tri_c(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, ca: Color, cb: Color, cc: Color) -> void:
+	st.set_color(ca); st.add_vertex(a)
+	st.set_color(cc); st.add_vertex(c)
+	st.set_color(cb); st.add_vertex(b)
+
+static func _ridge(rng: RandomNumberGenerator, segs: int, lo: float, hi: float) -> Array:
+	# smooth-ish ridgeline: a few sines + jagged noise, periodic around the ring
+	var ph := [rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU]
+	var out := []
+	for i in segs:
+		var t := TAU * i / segs
+		var v := 0.5 + 0.28 * sin(t * 3.0 + ph[0]) + 0.16 * sin(t * 7.0 + ph[1]) + 0.08 * sin(t * 17.0 + ph[2])
+		v += rng.randf_range(-0.06, 0.06)
+		out.append(lerp(lo, hi, clamp(v, 0.0, 1.0)))
+	return out
+
 static func mountains() -> ArrayMesh:
-	var st := _begin()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 42
-	var segs := 64
-	var r := 420.0
-	var peaks := []
-	for i in segs:
-		peaks.append(rng.randf_range(50, 150) * (1.0 if i % 3 != 0 else 1.5))
-	for i in segs:
-		var j := (i + 1) % segs
-		var a0 := TAU * i / segs
-		var a1 := TAU * j / segs
-		var am := (a0 + a1) * 0.5 if j != 0 else (a0 + TAU) * 0.5
-		var b0 := Vector3(cos(a0) * r, -60, sin(a0) * r)
-		var b1 := Vector3(cos(a1) * r, -60, sin(a1) * r)
-		var pk := Vector3(cos(am) * r * 0.98, peaks[i], sin(am) * r * 0.98)
-		var mid0 := b0.lerp(pk, 0.62)
-		var mid1 := b1.lerp(pk, 0.62)
-		var rock_c := Color(0.55, 0.62, 0.78)
-		_quad(st, b0, b1, mid1, mid0, rock_c if i % 2 == 0 else rock_c.darkened(0.08))
-		_tri(st, mid0, mid1, pk, Color(0.93, 0.96, 1.0) if i % 2 == 0 else Color(0.84, 0.9, 1.0))
-	var m := _finish(st)
-	# faces point inward toward camera
+	var segs := 160
+	var haze := Color(0.66, 0.76, 0.90)
+	# 1) valley floor: annulus far below, hazy blue with darker forest patches toward the near side
+	var rings := [250.0, 400.0, 550.0, 700.0, 880.0]
+	for ri in rings.size() - 1:
+		for i in segs:
+			var a0 := TAU * i / segs
+			var a1 := TAU * (i + 1) / segs
+			var r0: float = rings[ri]
+			var r1: float = rings[ri + 1]
+			var p00 := Vector3(cos(a0) * r0, VALLEY_Y, sin(a0) * r0)
+			var p01 := Vector3(cos(a1) * r0, VALLEY_Y, sin(a1) * r0)
+			var p10 := Vector3(cos(a0) * r1, VALLEY_Y, sin(a0) * r1)
+			var p11 := Vector3(cos(a1) * r1, VALLEY_Y, sin(a1) * r1)
+			var k0 := float(ri) / (rings.size() - 1)
+			var k1 := float(ri + 1) / (rings.size() - 1)
+			var forest := 0.5 + 0.5 * sin(a0 * 11.0 + ri * 1.7) * sin(a0 * 5.0 - ri)
+			var near_c := Color(0.30, 0.42, 0.52).lerp(Color(0.58, 0.67, 0.80), forest * 0.55)
+			var c0 := near_c.lerp(haze, k0)
+			var c1 := near_c.lerp(haze, k1)
+			_tri_c(st, p00, p01, p11, c0, c0, c1)
+			_tri_c(st, p00, p11, p10, c0, c1, c1)
+	# 2) two mountain ranges standing in the valley; nearer = lower + more contrast, far = taller + paler
+	var layers := [
+		{"r": 860.0, "lo": 60.0, "hi": 165.0, "rock": Color(0.60, 0.68, 0.84), "snow": Color(0.90, 0.94, 1.0)},
+		{"r": 700.0, "lo": 22.0, "hi": 95.0, "rock": Color(0.47, 0.56, 0.74), "snow": Color(0.86, 0.91, 0.99)},
+	]
+	for L in layers:
+		var r: float = L["r"]
+		var ridge := _ridge(rng, segs, L["lo"], L["hi"])
+		var rock: Color = L["rock"]
+		var snow: Color = L["snow"]
+		for i in segs:
+			var j := (i + 1) % segs
+			var a0 := TAU * i / segs
+			var a1 := TAU * (i + 1) / segs
+			var d0 := Vector3(cos(a0), 0, sin(a0))
+			var d1 := Vector3(cos(a1), 0, sin(a1))
+			var h0: float = ridge[i]
+			var h1: float = ridge[j]
+			# rows: base (in haze) -> snowline -> ridge
+			var b0 := d0 * r + Vector3(0, VALLEY_Y, 0)
+			var b1 := d1 * r + Vector3(0, VALLEY_Y, 0)
+			var s0 := d0 * r + Vector3(0, VALLEY_Y + h0 * 0.55, 0)
+			var s1 := d1 * r + Vector3(0, VALLEY_Y + h1 * 0.55, 0)
+			var t0 := d0 * r * 0.995 + Vector3(0, VALLEY_Y + h0, 0)
+			var t1 := d1 * r * 0.995 + Vector3(0, VALLEY_Y + h1, 0)
+			var streak := 0.08 if i % 2 == 0 else 0.0
+			var cb := haze
+			var cs := rock.darkened(streak)
+			var ct := snow.darkened(streak * 0.5)
+			_tri_c(st, b0, b1, s1, cb, cb, cs)
+			_tri_c(st, b0, s1, s0, cb, cs, cs)
+			_tri_c(st, s0, s1, t1, cs.lerp(ct, 0.6), cs.lerp(ct, 0.6), ct)
+			_tri_c(st, s0, t1, t0, cs.lerp(ct, 0.6), ct, ct)
+	var m := st.commit()
 	var mt := StandardMaterial3D.new()
 	mt.vertex_color_use_as_albedo = true
 	mt.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -531,3 +589,103 @@ static func mountains() -> ArrayMesh:
 	mt.disable_fog = true
 	m.surface_set_material(0, mt)
 	return m
+
+# ---------------------------------------------------------------- terrain feature visuals (render space)
+static func _quad2(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3, col: Color) -> void:
+	_quad(st, a, b, c, d, col)
+	_quad(st, a, d, c, b, col)
+
+## Rocky band covering a cliff face from a0 (top edge) to a1 (bottom), across the whole slope.
+static func cliff_band(track: Track, a0: float, a1: float, h: float) -> MeshInstance3D:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(a0 * 13.0)
+	var st := _begin()
+	var origin := track.to_render(0.0, a0, -track.drop_at(a0))
+	var fwd := track.forward(a0)
+	var u := -95.0
+	var prev := []
+	while u <= 95.0:
+		var top := track.to_render(u, a0 - 0.3, track.height(u, a0 - 0.3) + 0.15) - origin
+		var bot := track.to_render(u, a1 + 0.8, track.height(u, a1 + 0.8) - 0.3) - origin
+		var bulge := rng.randf_range(0.5, 1.6) * (0.6 + h * 0.08)
+		var m1 := top.lerp(bot, 0.33) + fwd * bulge
+		var m2 := top.lerp(bot, 0.7) + fwd * bulge * rng.randf_range(0.6, 1.2)
+		# jagged lip: some columns have rock breaking through the cornice
+		var rocky := rng.randf() < 0.45
+		var lip := top + fwd * rng.randf_range(0.2, 0.6) + Vector3.UP * (rng.randf_range(0.35, 0.8) if rocky else rng.randf_range(0.1, 0.3))
+		var cur := [lip, top, m1, m2, bot]
+		if not prev.is_empty():
+			var rc := ROCK if rng.randf() < 0.5 else ROCK_DARK
+			_quad2(st, prev[0], cur[0], cur[1], prev[1], SNOW)
+			_quad2(st, prev[0], cur[0], cur[2], prev[2], rc.lightened(0.05) if rocky else SNOW_SHADE)
+			_quad2(st, prev[2], cur[2], cur[3], prev[3], rc)
+			_quad2(st, prev[3], cur[3], cur[4], prev[4], rc.darkened(0.15))
+		prev = cur
+		u += rng.randf_range(1.6, 2.8)
+	# rocky buttresses standing ABOVE the edge, only outside the rideable width (rider is clamped at
+	# Track.EDGE), so the drop reads from the chase camera without visual-only rocks in the rider's path
+	for side in [-1.0, 1.0]:
+		var bu := Track.EDGE + 3.2 # crag radius <= 2.3*1.15 -> inner face stays outside the rider clamp
+		while bu < 42.0:
+			var uu: float = side * (bu + rng.randf_range(0.0, 1.2))
+			var base := track.to_render(uu, a0 + 0.6, track.height(uu, a0 + 0.6)) - origin
+			var foot := track.to_render(uu, a1 + 0.8, track.height(uu, a1 + 0.8) - 0.3) - origin
+			var tall: float = rng.randf_range(1.4, 3.2) + h * 0.12 + (bu - Track.EDGE) * 0.06
+			_crag(st, rng, base, foot, rng.randf_range(1.2, 2.0), tall)
+			bu += rng.randf_range(2.2, 3.6)
+	var mi := MeshInstance3D.new()
+	var m := _finish(st)
+	m.surface_set_material(0, mat("vc"))
+	mi.mesh = m
+	mi.position = origin
+	return mi
+
+## Jagged rock pillar from `foot` (below the edge) up to `tall` above `base`, with a snow cap.
+static func _crag(st: SurfaceTool, rng: RandomNumberGenerator, base: Vector3, foot: Vector3, r: float, tall: float) -> void:
+	var n := 5
+	var ring_lo := []
+	var ring_mid := []
+	var ring_top := []
+	var ph := rng.randf() * TAU
+	var top_c := base + Vector3.UP * tall
+	for i in n:
+		var ang := ph + TAU * i / n
+		var d := Vector3(cos(ang), 0, sin(ang))
+		var jr := r * rng.randf_range(0.8, 1.15)
+		ring_lo.append(Vector3(base.x, foot.y, base.z) + d * jr * 1.15)
+		ring_mid.append(base + Vector3.UP * tall * 0.55 + d * jr * 0.85)
+		ring_top.append(base + Vector3.UP * tall * rng.randf_range(0.82, 0.98) + d * jr * 0.45)
+	for i in n:
+		var j := (i + 1) % n
+		var rc := ROCK if i % 2 == 0 else ROCK_DARK
+		_quad2(st, ring_lo[i], ring_lo[j], ring_mid[j], ring_mid[i], rc.darkened(0.1))
+		_quad2(st, ring_mid[i], ring_mid[j], ring_top[j], ring_top[i], rc)
+		_tri(st, ring_top[i], ring_top[j], top_c, SNOW)
+		_tri(st, ring_top[i], top_c, ring_top[j], SNOW)
+
+## Rocks under the downhill side of a lip.
+static func lip_rocks(track: Track, f: Dictionary) -> MeshInstance3D:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(f.top * 7.0)
+	var st := _begin()
+	var origin := track.to_render(f.u, f.top, track.height(f.u, f.top))
+	var fwd := track.forward(f.top)
+	var u: float = f.u - f.w + 1.0
+	var prev := []
+	while u <= f.u + f.w - 1.0:
+		var top := track.to_render(u, f.top, track.height(u, f.top) + 0.05) - origin
+		var bot := track.to_render(u, f.a1 + 0.3, track.height(u, f.a1 + 0.3) - 0.2) - origin
+		var m1 := top.lerp(bot, 0.5) + fwd * rng.randf_range(0.2, 0.6)
+		var cur := [top, m1, bot]
+		if not prev.is_empty():
+			var rc := ROCK if rng.randf() < 0.5 else ROCK_DARK
+			_quad2(st, prev[0], cur[0], cur[1], prev[1], rc)
+			_quad2(st, prev[1], cur[1], cur[2], prev[2], rc.darkened(0.15))
+		prev = cur
+		u += rng.randf_range(0.9, 1.5)
+	var mi := MeshInstance3D.new()
+	var m := _finish(st)
+	m.surface_set_material(0, mat("vc"))
+	mi.mesh = m
+	mi.position = origin
+	return mi
